@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/hba1c_repository.dart';
+import '../domain/hba1c_result.dart';
 
 class AddHba1cScreen extends StatefulWidget {
-  const AddHba1cScreen({super.key, required this.userId});
+  const AddHba1cScreen({super.key, required this.userId, this.initialResult});
 
   final String userId;
+  final Hba1cResult? initialResult;
 
   @override
   State<AddHba1cScreen> createState() => _AddHba1cScreenState();
@@ -23,10 +25,24 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
   DateTime _testDate = DateUtils.dateOnly(DateTime.now());
   bool _isSaving = false;
 
+  bool get _isEditing => widget.initialResult != null;
+
   @override
   void initState() {
     super.initState();
+
     _repository = Hba1cRepository(userId: widget.userId);
+
+    final result = widget.initialResult;
+
+    if (result != null) {
+      _valueController.text = result.valuePercent.toString().replaceAll(
+        '.',
+        ',',
+      );
+      _noteController.text = result.note;
+      _testDate = DateUtils.dateOnly(result.testDate.toLocal());
+    }
   }
 
   @override
@@ -76,14 +92,31 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
 
     if (!_formKey.currentState!.validate()) return;
 
+    if (_testDate.isAfter(DateUtils.dateOnly(DateTime.now()))) {
+      _showMessage('Tahlil tarihi gelecekte olamaz.');
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
-      await _repository.addResult(
-        valuePercent: _parseValue(_valueController.text)!,
-        testDate: _testDate,
-        note: _noteController.text,
-      );
+      final value = _parseValue(_valueController.text)!;
+      final initialResult = widget.initialResult;
+
+      if (initialResult == null) {
+        await _repository.addResult(
+          valuePercent: value,
+          testDate: _testDate,
+          note: _noteController.text,
+        );
+      } else {
+        await _repository.updateResult(
+          id: initialResult.id,
+          valuePercent: value,
+          testDate: _testDate,
+          note: _noteController.text,
+        );
+      }
 
       if (!mounted) return;
 
@@ -91,11 +124,15 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
     } on FirebaseException catch (error) {
       if (!mounted) return;
 
-      _showMessage(
-        error.code == 'permission-denied'
-            ? 'Kayıt izni alınamadı. Firestore kurallarını kontrol edin.'
-            : 'Sonuç kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.',
-      );
+      final message = switch (error.code) {
+        'permission-denied' =>
+          'Kayıt izni alınamadı. Firestore kurallarını kontrol edin.',
+        'not-found' =>
+          'Bu sonuç artık bulunamıyor. Kayıtlar ekranına geri dönün.',
+        _ => 'Sonuç kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.',
+      };
+
+      _showMessage(message);
     } catch (_) {
       if (!mounted) return;
 
@@ -114,7 +151,9 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: AppColors.background,
-          title: const Text('HbA1c sonucu ekle'),
+          title: Text(
+            _isEditing ? 'HbA1c sonucunu düzenle' : 'HbA1c sonucu ekle',
+          ),
           automaticallyImplyLeading: !_isSaving,
         ),
         body: SafeArea(
@@ -171,8 +210,8 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
                                 !value.isFinite ||
                                 value <= 0 ||
                                 value > 100) {
-                              return '0 ile 100 arasında, sıfırdan büyük '
-                                  'bir yüzde girin.';
+                              return 'Sıfırdan büyük ve en fazla 100 '
+                                  'olan bir yüzde girin.';
                             }
 
                             return null;
@@ -213,7 +252,11 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
                           onPressed: _isSaving ? null : _save,
                           icon: const Icon(Icons.save_outlined),
                           label: Text(
-                            _isSaving ? 'Kaydediliyor...' : 'Sonucu kaydet',
+                            _isSaving
+                                ? 'Kaydediliyor...'
+                                : _isEditing
+                                ? 'Değişiklikleri kaydet'
+                                : 'Sonucu kaydet',
                           ),
                         ),
                         if (_isSaving) ...[
