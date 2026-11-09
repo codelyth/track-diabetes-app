@@ -166,14 +166,14 @@ Yeni özellikler geliştikçe ilgili modeller, veri erişimi ve ekranlar kendi �
 - [x] Flutter ve Android geliştirme ortamının kurulması
 - [x] Boş Flutter projesinin Android emülatöründe çalıştırılması
 - [x] Stitch ekran tasarımlarının hazırlanması
-- [ ] Ortak tema ve giriş ekranının uygulanıp doğrulanması
+- [x] Ortak tema ve giriş ekranının uygulanıp doğrulanması
 - [ ] Kayıt ve şifre sıfırlama ekranları
-- [ ] Firebase Authentication entegrasyonu
-- [ ] Firestore veri modeli ve erişim kuralları
-- [ ] Kan şekeri kayıtları ve filtreli tablo
-- [ ] Dashboard, ortalamalar ve grafik
-- [ ] İnsülin uygulama takibi
-- [ ] HbA1c kayıtları
+- [x] Firebase Authentication entegrasyonu
+- [x] Firestore veri modeli ve erişim kuralları
+- [x] Kan şekeri kayıtları ve filtreli tablo
+- [x] Dashboard, ortalamalar ve grafik
+- [x] İnsülin uygulama takibi
+- [x] HbA1c kayıtları
 - [ ] Yerel hatırlatıcılar ve bildirim izinleri
 - [ ] Android ana ekran widget’ları
 - [ ] Ayarlar ve profil
