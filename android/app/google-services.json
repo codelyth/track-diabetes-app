@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "429517407986",
+    "project_id": "track-diabetes-app",
+    "storage_bucket": "track-diabetes-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:429517407986:android:0c1f63e4154f849bea726b",
+        "android_client_info": {
+          "package_name": "com.example.track_diabetes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqNoiflc3ktvwiLB8bkvvFCHz3ALrRmEI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

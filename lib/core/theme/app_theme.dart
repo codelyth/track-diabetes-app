@@ -36,10 +36,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: AppColors.text,
         ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: AppColors.text,
-        ),
+        bodyMedium: TextStyle(fontSize: 14, color: AppColors.text),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -58,10 +55,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -69,19 +63,14 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 56),
-          textStyle: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-        ),
+        style: TextButton.styleFrom(foregroundColor: AppColors.primary),
       ),
     );
   }

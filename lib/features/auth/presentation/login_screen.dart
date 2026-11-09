@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'register_screen.dart';
+import 'reset_password_screen.dart';
+import '../data/auth_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   bool _hidePassword = true;
 
@@ -26,21 +30,32 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_isLoading) return;
+
     FocusScope.of(context).unfocus();
 
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    _showMessage(
-      'Form hazır. Firebase giriş bağlantısını sonraki adımda ekleyeceğiz.',
-    );
+    setState(() => _isLoading = true);
+
+    try {
+      await AuthService.signIn(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      // AuthGate, oturum açıldığını görünce ekranı değiştirecek.
+    } catch (error) {
+      if (!mounted) return;
+      _showMessage(AuthService.errorMessage(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -50,10 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 32,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
@@ -91,10 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Text(
                     'Diyabet Günlüğünüze Hoş Geldiniz',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.muted,
-                    ),
+                    style: TextStyle(fontSize: 16, color: AppColors.muted),
                   ),
                   const SizedBox(height: 32),
                   Container(
@@ -108,10 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            'E-posta Adresi',
-                            style: textTheme.titleMedium,
-                          ),
+                          Text('E-posta Adresi', style: textTheme.titleMedium),
                           const SizedBox(height: 10),
                           TextFormField(
                             controller: _emailController,
@@ -119,9 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             textInputAction: TextInputAction.next,
                             autocorrect: false,
                             enableSuggestions: false,
-                            autofillHints: const [
-                              AutofillHints.username,
-                            ],
+                            autofillHints: const [AutofillHints.username],
                             decoration: const InputDecoration(
                               hintText: 'ornek@eposta.com',
                               prefixIcon: Icon(Icons.mail_outline),
@@ -133,9 +137,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return 'E-posta adresinizi girin.';
                               }
 
-                              if (!RegExp(
-                                r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-                              ).hasMatch(email)) {
+                              if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                                  .hasMatch(email)) {
                                 return 'Geçerli bir e-posta adresi girin.';
                               }
 
@@ -143,10 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           const SizedBox(height: 22),
-                          Text(
-                            'Şifre',
-                            style: textTheme.titleMedium,
-                          ),
+                          Text('Şifre', style: textTheme.titleMedium),
                           const SizedBox(height: 10),
                           TextFormField(
                             controller: _passwordController,
@@ -154,9 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             autocorrect: false,
                             enableSuggestions: false,
                             textInputAction: TextInputAction.done,
-                            autofillHints: const [
-                              AutofillHints.password,
-                            ],
+                            autofillHints: const [AutofillHints.password],
                             onFieldSubmitted: (_) => _submit(),
                             decoration: InputDecoration(
                               hintText: 'Şifrenizi Girin',
@@ -189,11 +187,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {
-                                _showMessage(
-                                  'Şifre sıfırlama ekranını sonraki adımda ekleyeceğiz.',
-                                );
-                              },
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) =>
+                                              const ResetPasswordScreen(),
+                                        ),
+                                      );
+                                    },
                               child: const Text('Şifremi Unuttum'),
                             ),
                           ),
@@ -201,7 +204,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           FilledButton.icon(
                             onPressed: _submit,
                             icon: const Icon(Icons.login),
-                            label: const Text('Giriş Yap'),
+                            label: Text(
+                              _isLoading ? 'Giriş yapılıyor...' : 'Giriş yap',
+                            ),
                           ),
                         ],
                       ),
@@ -243,11 +248,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Text('Henüz hesabınız yok mu?'),
                       TextButton(
-                        onPressed: () {
-                          _showMessage(
-                            'Hesap oluşturma ekranını sonraki adımda ekleyeceğiz.',
-                          );
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const RegisterScreen(),
+                                  ),
+                                );
+                              },
                         child: const Text('Kayıt Olun'),
                       ),
                     ],
