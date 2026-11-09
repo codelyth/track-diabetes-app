@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
-import '../../glucose/presentation/add_glucose_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/data/auth_service.dart';
+import '../../glucose/presentation/add_glucose_screen.dart';
+import '../../glucose/presentation/glucose_records_page.dart';
+import 'overview_page.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,6 +19,10 @@ class _MainScreenState extends State<MainScreen> {
   bool _isSigningOut = false;
 
   static const _titles = ['Özet', 'Kayıtlar', 'Hatırlatıcılar', 'Ayarlar'];
+
+  void _selectPage(int index) {
+    setState(() => _selectedIndex = index);
+  }
 
   Future<void> _openAddGlucose() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -46,9 +52,11 @@ class _MainScreenState extends State<MainScreen> {
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AuthService.errorMessage(error))));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(AuthService.errorMessage(error))),
+        );
     } finally {
       if (mounted) {
         setState(() => _isSigningOut = false);
@@ -58,6 +66,12 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.background,
@@ -79,24 +93,22 @@ class _MainScreenState extends State<MainScreen> {
         child: IndexedStack(
           index: _selectedIndex,
           children: [
-            const _OverviewPage(),
-            const _EmptyPage(
-              icon: Icons.table_rows_outlined,
-              title: 'Ölçüm Kayıtlarınız',
-              description: 'Şeker, insülin ve HbA1c kayıtlarınızı burada listeleyeceğiz.',
+            OverviewPage(
+              key: ValueKey('overview-${user.uid}'),
+              userId: user.uid,
+              onOpenRecords: () => _selectPage(1),
+              onOpenReminders: () => _selectPage(2),
             ),
-            const _EmptyPage(
-              icon: Icons.notifications_active_outlined,
-              title: 'Hatırlatıcılar',
-              description:
-                  'Ölçüm ve insülin kaydı hatırlatıcılarınızı '
-                  'buradan yöneteceksiniz.',
+            GlucoseRecordsPage(
+              key: ValueKey('records-${user.uid}'),
+              userId: user.uid,
             ),
+            const _RemindersPlaceholder(),
             _SettingsPage(isSigningOut: _isSigningOut, onSignOut: _signOut),
           ],
         ),
       ),
-      floatingActionButton: _selectedIndex == 0 || _selectedIndex == 1
+      floatingActionButton: _selectedIndex == 1
           ? FloatingActionButton.extended(
               onPressed: _openAddGlucose,
               backgroundColor: AppColors.primary,
@@ -109,9 +121,7 @@ class _MainScreenState extends State<MainScreen> {
         selectedIndex: _selectedIndex,
         backgroundColor: Colors.white,
         indicatorColor: AppColors.lavender,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
+        onDestinationSelected: _selectPage,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -138,130 +148,8 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class _OverviewPage extends StatelessWidget {
-  const _OverviewPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Text(
-          'Günlük Takibiniz',
-          style: Theme.of(context).textTheme.headlineSmall
-              ?.copyWith(color: AppColors.text, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Ölçümlerinize ve günlük kayıtlarınıza buradan ulaşın.',
-          style: TextStyle(color: AppColors.muted, height: 1.5),
-        ),
-        const SizedBox(height: 24),
-        const _SummaryCard(
-          icon: Icons.water_drop_outlined,
-          title: 'Son Şeker Ölçümü',
-          value: 'Henüz ölçüm yok',
-          description: 'Kaydedilen son değer ve zamanı burada görünecek.',
-        ),
-        const SizedBox(height: 16),
-        const _SummaryCard(
-          icon: Icons.query_stats,
-          title: 'Ölçüm Ortalamaları',
-          value: 'Henüz veri yok',
-          description: 'Açlık ve tokluk ortalamaları, ölçüm kayıtlarınızdan hesaplanacak.',
-        ),
-        const SizedBox(height: 16),
-        const _SummaryCard(
-          icon: Icons.alarm_outlined,
-          title: 'Sıradaki Hatırlatıcı',
-          value: 'Henüz hatırlatıcı yok',
-          description: 'Planladığınız sıradaki hatırlatma burada görünecek.',
-        ),
-        const SizedBox(height: 16),
-        const _SummaryCard(
-          icon: Icons.science_outlined,
-          title: 'Son HbA1c Sonucu',
-          value: 'Henüz sonuç yok',
-          description: 'Laboratuvar sonucu ve test tarihi burada görünecek.',
-        ),
-        const SizedBox(height: 16),
-        const _SummaryCard(
-          icon: Icons.vaccines_outlined,
-          title: 'Bugünkü İnsülin Kayıtları',
-          value: 'Henüz kayıt yok',
-          description: 'Kaydettiğiniz uygulamalar burada listelenecek.',
-        ),
-      ],
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.description,
-  });
-
-  final IconData icon;
-  final String title;
-  final String value;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.primary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.text,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(color: AppColors.muted, height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyPage extends StatelessWidget {
-  const _EmptyPage({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
+class _RemindersPlaceholder extends StatelessWidget {
+  const _RemindersPlaceholder();
 
   @override
   Widget build(BuildContext context) {
@@ -271,22 +159,26 @@ class _EmptyPage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 36,
               backgroundColor: AppColors.lavender,
-              child: Icon(icon, size: 36, color: AppColors.primary),
+              child: Icon(
+                Icons.notifications_active_outlined,
+                size: 36,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
-              title,
-              textAlign: TextAlign.center,
+              'Hatırlatıcılar',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
-            Text(
-              description,
+            const Text(
+              'Ölçüm ve insülin kaydı hatırlatıcılarınızı '
+              'buradan yöneteceksiniz.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, height: 1.5),
+              style: TextStyle(color: AppColors.muted, height: 1.5),
             ),
           ],
         ),
@@ -306,18 +198,50 @@ class _SettingsPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        const _SummaryCard(
-          icon: Icons.settings_outlined,
-          title: 'Uygulama ayarları',
-          value: 'Tercihleriniz',
-          description:
-              'Profil, bildirim ve widget ayarlarını burada tamamlayacağız.',
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.settings_outlined, color: AppColors.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Uygulama ayarları',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tercihleriniz',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.text,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Profil, bildirim ve widget ayarlarını '
+                'burada tamamlayacağız.',
+                style: TextStyle(color: AppColors.muted, height: 1.5),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 24),
         FilledButton.icon(
           onPressed: isSigningOut ? null : onSignOut,
           icon: const Icon(Icons.logout),
-          label: Text(isSigningOut ? 'Çıkış yapılıyor...' : 'Çıkış Yap'),
+          label: Text(isSigningOut ? 'Çıkış yapılıyor...' : 'Çıkış yap'),
         ),
       ],
     );
