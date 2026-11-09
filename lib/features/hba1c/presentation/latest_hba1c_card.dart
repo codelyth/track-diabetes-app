@@ -5,10 +5,16 @@ import '../data/hba1c_repository.dart';
 import '../domain/hba1c_result.dart';
 
 class LatestHba1cCard extends StatefulWidget {
-  const LatestHba1cCard({super.key, required this.userId, required this.onTap});
+  const LatestHba1cCard({
+    super.key,
+    required this.userId,
+    required this.onTap,
+    this.compact = false,
+  });
 
   final String userId;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   State<LatestHba1cCard> createState() => _LatestHba1cCardState();
@@ -38,29 +44,40 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: widget.onTap,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(widget.compact ? 14 : 20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.science_outlined, color: AppColors.primary),
-                  const SizedBox(width: 10),
-                  Expanded(
+                  const Icon(
+                    Icons.science_outlined,
+                    size: 20,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 7),
+                  const Expanded(
                     child: Text(
-                      'Son HbA1c sonucu',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      'Son HbA1c',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.muted),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: AppColors.muted,
+                  ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               StreamBuilder<List<Hba1cResult>>(
                 stream: _resultsStream,
                 builder: (context, snapshot) {
@@ -68,7 +85,7 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('HbA1c sonucu yüklenemedi.'),
+                        const Text('Yüklenemedi'),
                         TextButton(
                           onPressed: () {
                             setState(() {
@@ -82,59 +99,48 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                   }
 
                   if (!snapshot.hasData) {
-                    return const LinearProgressIndicator();
-                  }
-
-                  final results = snapshot.data!;
-
-                  if (results.isEmpty) {
-                    return const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Henüz sonuç yok',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.text,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Laboratuvar sonucunuzu Kayıtlar bölümünden ekleyin.',
-                          style: TextStyle(color: AppColors.muted, height: 1.5),
-                        ),
-                      ],
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: LinearProgressIndicator(),
                     );
                   }
 
-                  final latest = results.first;
-                  final value = latest.valuePercent.toString().replaceAll(
-                    '.',
-                    ',',
-                  );
+                  final results = snapshot.data!;
+                  final latest = results.isEmpty ? null : results.first;
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '%$value',
+                        latest == null
+                            ? 'Sonuç yok'
+                            : '%${latest.valuePercent.toString().replaceAll('.', ',')}',
                         style: const TextStyle(
-                          fontSize: 28,
+                          fontSize: 26,
                           fontWeight: FontWeight.w700,
                           color: AppColors.text,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 5),
                       Text(
-                        'Tahlil tarihi: ${_date(latest.testDate)}',
-                        style: const TextStyle(color: AppColors.muted),
+                        latest == null
+                            ? 'Sonuç ekleyin'
+                            : _date(latest.testDate),
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Kullanıcının kaydettiği laboratuvar sonucu.',
-                        style: TextStyle(color: AppColors.muted, fontSize: 12),
-                      ),
+                      if (!widget.compact) ...[
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Kullanıcının kaydettiği laboratuvar sonucu.',
+                          style: TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ],
                   );
                 },
