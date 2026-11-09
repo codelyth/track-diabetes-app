@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../glucose/data/glucose_repository.dart';
 import '../../glucose/domain/glucose_reading.dart';
+import '../../hba1c/presentation/latest_hba1c_card.dart';
 
 enum _SummaryPeriod {
   daily('Günlük', 1),
@@ -21,11 +22,13 @@ class OverviewPage extends StatefulWidget {
     required this.userId,
     required this.onOpenRecords,
     required this.onOpenReminders,
+    required this.onOpenHba1c,
   });
 
   final String userId;
   final VoidCallback onOpenRecords;
   final VoidCallback onOpenReminders;
+  final VoidCallback onOpenHba1c;
 
   @override
   State<OverviewPage> createState() => _OverviewPageState();
@@ -64,8 +67,9 @@ class _OverviewPageState extends State<OverviewPage> {
     );
 
     final average = total / readings.length;
+    final formatted = average.toStringAsFixed(1).replaceAll('.', ',');
 
-    return '${average.toStringAsFixed(1).replaceAll('.', ',')} mg/dL';
+    return '$formatted mg/dL';
   }
 
   void _retry() {
@@ -76,179 +80,185 @@ class _OverviewPageState extends State<OverviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<GlucoseReading>>(
-      stream: _readingsStream,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Text(
+          'Günlük takibiniz',
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(color: AppColors.text, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Detayları görmek için ilgili karta dokunun.',
+          style: TextStyle(color: AppColors.muted, height: 1.5),
+        ),
+        const SizedBox(height: 24),
+        StreamBuilder<List<GlucoseReading>>(
+          stream: _readingsStream,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Özet yüklenemedi. Bağlantınızı ve '
-                    'erişim izinlerinizi kontrol edin.',
+                    'Şeker ölçümleri yüklenemedi. '
+                    'Bağlantınızı ve erişim izinlerinizi kontrol edin.',
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
                   TextButton.icon(
                     onPressed: _retry,
                     icon: const Icon(Icons.refresh),
                     label: const Text('Yeniden dene'),
                   ),
                 ],
-              ),
-            ),
-          );
-        }
+              );
+            }
 
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+            if (!snapshot.hasData) {
+              return const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
 
-        final readings = snapshot.data!;
-        final latest = readings.isEmpty ? null : readings.first;
-        final latestDate = latest?.measuredAt.toLocal();
+            final readings = snapshot.data!;
+            final latest = readings.isEmpty ? null : readings.first;
+            final latestDate = latest?.measuredAt.toLocal();
 
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
+            final now = DateTime.now();
+            final today = DateTime(now.year, now.month, now.day);
 
-        final start = DateTime(
-          today.year,
-          today.month,
-          today.day - _period.days + 1,
-        );
+            final start = DateTime(
+              today.year,
+              today.month,
+              today.day - _period.days + 1,
+            );
 
-        final endExclusive = DateTime(today.year, today.month, today.day + 1);
+            final endExclusive = DateTime(
+              today.year,
+              today.month,
+              today.day + 1,
+            );
 
-        final selectedReadings = readings
-            .where((reading) {
-              final date = reading.measuredAt.toLocal();
+            final selectedReadings = readings
+                .where((reading) {
+                  final date = reading.measuredAt.toLocal();
 
-              return !date.isBefore(start) && date.isBefore(endExclusive);
-            })
-            .toList(growable: false);
+                  return !date.isBefore(start) && date.isBefore(endExclusive);
+                })
+                .toList(growable: false);
 
-        final fastingReadings = selectedReadings
-            .where((reading) => reading.type == GlucoseType.fasting)
-            .toList(growable: false);
+            final fastingReadings = selectedReadings
+                .where((reading) => reading.type == GlucoseType.fasting)
+                .toList(growable: false);
 
-        final postMealReadings = selectedReadings
-            .where((reading) => reading.type == GlucoseType.postMeal)
-            .toList(growable: false);
+            final postMealReadings = selectedReadings
+                .where((reading) => reading.type == GlucoseType.postMeal)
+                .toList(growable: false);
 
-        return ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text(
-              'Günlük takibiniz',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: AppColors.text,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Detayları görmek için ilgili karta dokunun.',
-              style: TextStyle(color: AppColors.muted, height: 1.5),
-            ),
-            const SizedBox(height: 24),
-            _OverviewCard(
-              onTap: widget.onOpenRecords,
-              icon: Icons.water_drop_outlined,
-              title: 'Son şeker ölçümü',
-              value: latest == null
-                  ? 'Henüz ölçüm yok'
-                  : '${latest.valueMgDl} mg/dL',
-              description: latest == null || latestDate == null
-                  ? 'İlk ölçümünüzü Kayıtlar bölümünden ekleyebilirsiniz.'
-                  : '${latest.type.label} • '
-                        '${_date(latestDate)} • ${_time(latestDate)}',
-              highlighted: true,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Ölçüm ortalamaları',
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            SegmentedButton<_SummaryPeriod>(
-              segments: _SummaryPeriod.values.map((period) {
-                return ButtonSegment(value: period, label: Text(period.label));
-              }).toList(),
-              selected: {_period},
-              onSelectionChanged: (selection) {
-                setState(() => _period = selection.first);
-              },
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '${_date(start)} – ${_date(today)}',
-              style: const TextStyle(color: AppColors.muted),
-            ),
-            const SizedBox(height: 16),
-            _OverviewCard(
-              onTap: widget.onOpenRecords,
-              icon: Icons.water_drop_outlined,
-              title: 'Açlık ortalaması',
-              value: _average(fastingReadings),
-              description: '${fastingReadings.length} ölçüm üzerinden',
-            ),
-            const SizedBox(height: 16),
-            _OverviewCard(
-              onTap: widget.onOpenRecords,
-              icon: Icons.restaurant_outlined,
-              title: 'Tokluk ortalaması',
-              value: _average(postMealReadings),
-              description: '${postMealReadings.length} ölçüm üzerinden',
-            ),
-            const SizedBox(height: 16),
-            _OverviewCard(
-              onTap: widget.onOpenRecords,
-              icon: Icons.query_stats,
-              title: 'Genel ortalama',
-              value: _average(selectedReadings),
-              description:
-                  '${selectedReadings.length} ölçüm • Açlık ve tokluk birlikte',
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Ortalamalar yalnızca kaydettiğiniz ölçümlerden hesaplanır.',
-              style: TextStyle(
-                color: AppColors.muted,
-                fontSize: 12,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _OverviewCard(
-              onTap: widget.onOpenReminders,
-              icon: Icons.alarm_outlined,
-              title: 'Sıradaki hatırlatıcı',
-              value: 'Hatırlatıcılar hazırlanıyor',
-              description: 'Hatırlatıcılar bölümünü açmak için dokunun.',
-            ),
-            const SizedBox(height: 16),
-            _OverviewCard(
-              onTap: widget.onOpenRecords,
-              icon: Icons.science_outlined,
-              title: 'Son HbA1c sonucu',
-              value: 'HbA1c bölümü hazırlanıyor',
-              description: 'Kayıtlar bölümünü açmak için dokunun.',
-            ),
-            const SizedBox(height: 16),
-            _OverviewCard(
-              onTap: widget.onOpenRecords,
-              icon: Icons.vaccines_outlined,
-              title: 'Bugünkü insülin kayıtları',
-              value: 'İnsülin bölümü hazırlanıyor',
-              description: 'Kayıtlar bölümünü açmak için dokunun.',
-            ),
-          ],
-        );
-      },
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _OverviewCard(
+                  onTap: widget.onOpenRecords,
+                  icon: Icons.water_drop_outlined,
+                  title: 'Son şeker ölçümü',
+                  value: latest == null
+                      ? 'Henüz ölçüm yok'
+                      : '${latest.valueMgDl} mg/dL',
+                  description: latest == null || latestDate == null
+                      ? 'İlk ölçümünüzü Kayıtlar bölümünden ekleyebilirsiniz.'
+                      : '${latest.type.label} • '
+                            '${_date(latestDate)} • ${_time(latestDate)}',
+                  highlighted: true,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Ölçüm ortalamaları',
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<_SummaryPeriod>(
+                  segments: _SummaryPeriod.values.map((period) {
+                    return ButtonSegment<_SummaryPeriod>(
+                      value: period,
+                      label: Text(period.label),
+                    );
+                  }).toList(),
+                  selected: {_period},
+                  onSelectionChanged: (selection) {
+                    setState(() => _period = selection.first);
+                  },
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${_date(start)} – ${_date(today)}',
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+                const SizedBox(height: 16),
+                _OverviewCard(
+                  onTap: widget.onOpenRecords,
+                  icon: Icons.water_drop_outlined,
+                  title: 'Açlık ortalaması',
+                  value: _average(fastingReadings),
+                  description: '${fastingReadings.length} ölçüm üzerinden',
+                ),
+                const SizedBox(height: 16),
+                _OverviewCard(
+                  onTap: widget.onOpenRecords,
+                  icon: Icons.restaurant_outlined,
+                  title: 'Tokluk ortalaması',
+                  value: _average(postMealReadings),
+                  description: '${postMealReadings.length} ölçüm üzerinden',
+                ),
+                const SizedBox(height: 16),
+                _OverviewCard(
+                  onTap: widget.onOpenRecords,
+                  icon: Icons.query_stats,
+                  title: 'Genel ortalama',
+                  value: _average(selectedReadings),
+                  description:
+                      '${selectedReadings.length} ölçüm • '
+                      'Açlık ve tokluk birlikte',
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Ortalamalar yalnızca kaydettiğiniz '
+                  'ölçümlerden hesaplanır.',
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        LatestHba1cCard(
+          key: ValueKey('latest-hba1c-${widget.userId}'),
+          userId: widget.userId,
+          onTap: widget.onOpenHba1c,
+        ),
+        const SizedBox(height: 16),
+        _OverviewCard(
+          onTap: widget.onOpenReminders,
+          icon: Icons.alarm_outlined,
+          title: 'Sıradaki hatırlatıcı',
+          value: 'Hatırlatıcılar hazırlanıyor',
+          description: 'Hatırlatıcılar bölümünü açmak için dokunun.',
+        ),
+        const SizedBox(height: 16),
+        const _OverviewCard(
+          icon: Icons.vaccines_outlined,
+          title: 'Bugünkü insülin kayıtları',
+          value: 'İnsülin bölümü hazırlanıyor',
+          description: 'İnsülin kayıtları sonraki adımda eklenecek.',
+        ),
+      ],
     );
   }
 }
@@ -259,7 +269,7 @@ class _OverviewCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.description,
-    required this.onTap,
+    this.onTap,
     this.highlighted = false,
   });
 
@@ -267,7 +277,7 @@ class _OverviewCard extends StatelessWidget {
   final String title;
   final String value;
   final String description;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool highlighted;
 
   @override
@@ -293,7 +303,8 @@ class _OverviewCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.muted),
+                  if (onTap != null)
+                    const Icon(Icons.chevron_right, color: AppColors.muted),
                 ],
               ),
               const SizedBox(height: 16),

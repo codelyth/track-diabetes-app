@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/data/auth_service.dart';
 import '../../glucose/presentation/add_glucose_screen.dart';
-import '../../glucose/presentation/glucose_records_page.dart';
+import '../../hba1c/presentation/add_hba1c_screen.dart';
 import 'overview_page.dart';
+import 'records_page.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,20 +19,37 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   bool _isSigningOut = false;
 
+  RecordTab _recordTab = RecordTab.glucose;
+
   static const _titles = ['Özet', 'Kayıtlar', 'Hatırlatıcılar', 'Ayarlar'];
 
   void _selectPage(int index) {
     setState(() => _selectedIndex = index);
   }
 
-  Future<void> _openAddGlucose() async {
+  void _openRecords(RecordTab tab) {
+    setState(() {
+      _recordTab = tab;
+      _selectedIndex = 1;
+    });
+  }
+
+  Future<void> _openAddRecord() async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) return;
 
+    final tab = _recordTab;
+
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => AddGlucoseScreen(userId: user.uid),
+        builder: (_) {
+          if (tab == RecordTab.hba1c) {
+            return AddHba1cScreen(userId: user.uid);
+          }
+
+          return AddGlucoseScreen(userId: user.uid);
+        },
       ),
     );
 
@@ -39,7 +57,15 @@ class _MainScreenState extends State<MainScreen> {
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Ölçüm kaydedildi.')));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            tab == RecordTab.hba1c
+                ? 'HbA1c sonucu kaydedildi.'
+                : 'Ölçüm kaydedildi.',
+          ),
+        ),
+      );
   }
 
   Future<void> _signOut() async {
@@ -96,12 +122,17 @@ class _MainScreenState extends State<MainScreen> {
             OverviewPage(
               key: ValueKey('overview-${user.uid}'),
               userId: user.uid,
-              onOpenRecords: () => _selectPage(1),
+              onOpenRecords: () => _openRecords(RecordTab.glucose),
               onOpenReminders: () => _selectPage(2),
+              onOpenHba1c: () => _openRecords(RecordTab.hba1c),
             ),
-            GlucoseRecordsPage(
+            RecordsPage(
               key: ValueKey('records-${user.uid}'),
               userId: user.uid,
+              selectedTab: _recordTab,
+              onTabChanged: (tab) {
+                setState(() => _recordTab = tab);
+              },
             ),
             const _RemindersPlaceholder(),
             _SettingsPage(isSigningOut: _isSigningOut, onSignOut: _signOut),
@@ -110,11 +141,13 @@ class _MainScreenState extends State<MainScreen> {
       ),
       floatingActionButton: _selectedIndex == 1
           ? FloatingActionButton.extended(
-              onPressed: _openAddGlucose,
+              onPressed: _openAddRecord,
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text('Ölçüm ekle'),
+              label: Text(
+                _recordTab == RecordTab.hba1c ? 'HbA1c ekle' : 'Ölçüm ekle',
+              ),
             )
           : null,
       bottomNavigationBar: NavigationBar(

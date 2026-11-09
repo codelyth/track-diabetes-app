@@ -36,6 +36,33 @@ service cloud.firestore {
           && data.updatedAt is timestamp;
     }
 
+    function isValidHba1cResult() {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+            'valuePercent',
+            'testDate',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'valuePercent',
+            'testDate',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && (data.valuePercent is int || data.valuePercent is float)
+          && data.valuePercent > 0
+          && data.valuePercent <= 100
+          && data.testDate is timestamp
+          && data.note is string
+          && data.note.size() <= 1000
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+    }
+
     match /users/{userId}/glucose_readings/{readingId} {
       allow read: if isOwner(userId);
 
@@ -46,6 +73,22 @@ service cloud.firestore {
 
       allow update: if isOwner(userId)
           && isValidReading()
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/hba1c_results/{resultId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+          && isValidHba1cResult()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+          && isValidHba1cResult()
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.updatedAt == request.time;
 
