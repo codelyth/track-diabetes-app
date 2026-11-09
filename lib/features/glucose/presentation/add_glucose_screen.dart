@@ -7,9 +7,14 @@ import '../data/glucose_repository.dart';
 import '../domain/glucose_reading.dart';
 
 class AddGlucoseScreen extends StatefulWidget {
-  const AddGlucoseScreen({super.key, required this.userId});
+  const AddGlucoseScreen({
+    super.key,
+    required this.userId,
+    this.initialReading,
+  });
 
   final String userId;
+  final GlucoseReading? initialReading;
 
   @override
   State<AddGlucoseScreen> createState() => _AddGlucoseScreenState();
@@ -26,10 +31,22 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
   DateTime _measuredAt = DateTime.now();
   bool _isSaving = false;
 
+  bool get _isEditing => widget.initialReading != null;
+
   @override
   void initState() {
     super.initState();
+
     _repository = GlucoseRepository(userId: widget.userId);
+
+    final reading = widget.initialReading;
+
+    if (reading != null) {
+      _valueController.text = reading.valueMgDl.toString();
+      _noteController.text = reading.note;
+      _type = reading.type;
+      _measuredAt = reading.measuredAt.toLocal();
+    }
   }
 
   @override
@@ -39,17 +56,15 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
     super.dispose();
   }
 
-  String _twoDigits(int value) => value.toString().padLeft(2, '0');
+  String _two(int value) => value.toString().padLeft(2, '0');
 
   String get _dateLabel {
-    return '${_twoDigits(_measuredAt.day)}.'
-        '${_twoDigits(_measuredAt.month)}.'
-        '${_measuredAt.year}';
+    return '${_two(_measuredAt.day)}.'
+        '${_two(_measuredAt.month)}.${_measuredAt.year}';
   }
 
   String get _timeLabel {
-    return '${_twoDigits(_measuredAt.hour)}:'
-        '${_twoDigits(_measuredAt.minute)}';
+    return '${_two(_measuredAt.hour)}:${_two(_measuredAt.minute)}';
   }
 
   Future<void> _pickDate() async {
@@ -132,12 +147,25 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
     setState(() => _isSaving = true);
 
     try {
-      await _repository.addReading(
-        valueMgDl: int.parse(_valueController.text.trim()),
-        type: type,
-        measuredAt: _measuredAt,
-        note: _noteController.text,
-      );
+      final value = int.parse(_valueController.text.trim());
+      final initialReading = widget.initialReading;
+
+      if (initialReading == null) {
+        await _repository.addReading(
+          valueMgDl: value,
+          type: type,
+          measuredAt: _measuredAt,
+          note: _noteController.text,
+        );
+      } else {
+        await _repository.updateReading(
+          id: initialReading.id,
+          valueMgDl: value,
+          type: type,
+          measuredAt: _measuredAt,
+          note: _noteController.text,
+        );
+      }
 
       if (!mounted) return;
 
@@ -145,20 +173,29 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
     } on FirebaseException catch (error) {
       if (!mounted) return;
 
-      _showMessage(
-        error.code == 'permission-denied'
-            ? 'Kayıt izni alınamadı. Oturumunuzu ve Firestore '
-                  'kurallarını kontrol edin.'
-            : 'Ölçüm kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.',
-      );
+      final message = switch (error.code) {
+        'permission-denied' =>
+          'Kayıt izni alınamadı. Oturumunuzu ve Firestore '
+              'kurallarını kontrol edin.',
+        'not-found' =>
+          'Bu ölçüm artık bulunamıyor. Kayıtlar ekranına geri dönün.',
+        _ => 'Ölçüm kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.',
+      };
+
+      _showMessage(message);
     } catch (_) {
       if (!mounted) return;
+
       _showMessage('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  Widget _label(String text) {
+    return Text(text, style: Theme.of(context).textTheme.titleMedium);
   }
 
   @override
@@ -168,7 +205,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: AppColors.background,
-          title: const Text('Ölçüm ekle'),
+          title: Text(_isEditing ? 'Ölçümü düzenle' : 'Ölçüm ekle'),
           automaticallyImplyLeading: !_isSaving,
         ),
         body: SafeArea(
@@ -193,10 +230,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Text(
-                                'Kan şekeri değeri',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
+                              _label('Kan şekeri değeri'),
                               const SizedBox(height: 16),
                               TextFormField(
                                 controller: _valueController,
@@ -230,10 +264,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        Text(
-                          'Ölçüm türü',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                        _label('Ölçüm türü'),
                         const SizedBox(height: 12),
                         SegmentedButton<GlucoseType>(
                           emptySelectionAllowed: true,
@@ -259,10 +290,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                           },
                         ),
                         const SizedBox(height: 24),
-                        Text(
-                          'Ölçüm zamanı',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                        _label('Ölçüm zamanı'),
                         const SizedBox(height: 12),
                         OutlinedButton.icon(
                           onPressed: _pickDate,
@@ -307,14 +335,19 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                         FilledButton.icon(
                           onPressed: _isSaving ? null : _save,
                           icon: const Icon(Icons.save_outlined),
-                          label: Text(_isSaving ? 'Kaydediliyor...' : 'Kaydet'),
+                          label: Text(
+                            _isSaving
+                                ? 'Kaydediliyor...'
+                                : _isEditing
+                                ? 'Değişiklikleri kaydet'
+                                : 'Kaydet',
+                          ),
                         ),
                         if (_isSaving) ...[
                           const SizedBox(height: 12),
                           const Text(
-                            'Sunucu onayı bekleniyor. '
-                            'Çevrimdışıysanız internet bağlantısı '
-                            'geldiğinde işlem devam eder.',
+                            'Sunucu onayı bekleniyor. Çevrimdışıysanız '
+                            'bağlantı geldiğinde işlem devam eder.',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.muted),
                           ),

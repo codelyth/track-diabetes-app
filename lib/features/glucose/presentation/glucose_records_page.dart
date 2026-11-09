@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'glucose_detail_sheet.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../data/glucose_repository.dart';
 import '../domain/glucose_reading.dart';
@@ -117,51 +119,22 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
         .toList(growable: false);
   }
 
-  void _showDetails(GlucoseReading reading) {
-    final measuredAt = reading.measuredAt.toLocal();
-
-    showModalBottomSheet<void>(
+  Future<void> _showDetails(GlucoseReading reading) async {
+    final deleted = await showModalBottomSheet<bool>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       builder: (context) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  '${reading.valueMgDl} mg/dL',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '${reading.type.label} • '
-                  '${_date(measuredAt)} • ${_time(measuredAt)}',
-                ),
-                const SizedBox(height: 24),
-                Text('Not', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Text(
-                  reading.note.isEmpty ? 'Not eklenmemiş.' : reading.note,
-                  style: const TextStyle(height: 1.5),
-                ),
-                const SizedBox(height: 24),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Kapat'),
-                ),
-              ],
-            ),
-          ),
-        );
+        return GlucoseDetailSheet(reading: reading, repository: _repository);
       },
     );
+
+    if (!mounted || deleted != true) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Ölçüm silindi.')));
   }
 
   @override
@@ -172,7 +145,7 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
       children: [
         Text(
-          'Şeker ölçümleri',
+          'Şeker Ölçümleri',
           style: Theme.of(context).textTheme.titleLarge
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
