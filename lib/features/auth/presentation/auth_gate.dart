@@ -44,9 +44,7 @@ class _AuthGateState extends State<AuthGate> {
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -56,9 +54,7 @@ class _AuthGateState extends State<AuthGate> {
           return const LoginScreen();
         }
 
-        return MainScreen(
-          key: ValueKey(user.uid),
-        );
+        return MainScreen(key: ValueKey(user.uid));
       },
     );
   }

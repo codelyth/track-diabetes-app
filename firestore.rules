@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null
+          && request.auth.uid == userId;
+    }
+
+    function isValidReading() {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+            'valueMgDl',
+            'type',
+            'measuredAt',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'valueMgDl',
+            'type',
+            'measuredAt',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.valueMgDl is int
+          && data.valueMgDl > 0
+          && data.type in ['fasting', 'postMeal']
+          && data.measuredAt is timestamp
+          && data.note is string
+          && data.note.size() <= 1000
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId}/glucose_readings/{readingId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+          && isValidReading()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+          && isValidReading()
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+
+      allow delete: if isOwner(userId);
+    }
+  }
+}

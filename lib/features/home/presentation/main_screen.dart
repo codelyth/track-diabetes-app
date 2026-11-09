@@ -14,12 +14,7 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   bool _isSigningOut = false;
 
-  static const _titles = [
-    'Özet',
-    'Kayıtlar',
-    'Hatırlatıcılar',
-    'Ayarlar',
-  ];
+  static const _titles = ['Özet', 'Kayıtlar', 'Hatırlatıcılar', 'Ayarlar'];
 
   Future<void> _signOut() async {
     if (_isSigningOut) return;
@@ -31,9 +26,9 @@ class _MainScreenState extends State<MainScreen> {
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AuthService.errorMessage(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(AuthService.errorMessage(error))));
     } finally {
       if (mounted) {
         setState(() => _isSigningOut = false);
@@ -55,10 +50,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
             Text(
               _titles[_selectedIndex],
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.muted,
-              ),
+              style: const TextStyle(fontSize: 13, color: AppColors.muted),
             ),
           ],
         ),
@@ -71,8 +63,7 @@ class _MainScreenState extends State<MainScreen> {
             const _EmptyPage(
               icon: Icons.table_rows_outlined,
               title: 'Ölçüm Kayıtlarınız',
-              description:
-                  'Şeker, insülin ve HbA1c kayıtlarınızı burada listeleyeceğiz.',
+              description: 'Şeker, insülin ve HbA1c kayıtlarınızı burada listeleyeceğiz.',
             ),
             const _EmptyPage(
               icon: Icons.notifications_active_outlined,
@@ -81,10 +72,7 @@ class _MainScreenState extends State<MainScreen> {
                   'Ölçüm ve insülin kaydı hatırlatıcılarınızı '
                   'buradan yöneteceksiniz.',
             ),
-            _SettingsPage(
-              isSigningOut: _isSigningOut,
-              onSignOut: _signOut,
-            ),
+            _SettingsPage(isSigningOut: _isSigningOut, onSignOut: _signOut),
           ],
         ),
       ),
@@ -131,18 +119,13 @@ class _OverviewPage extends StatelessWidget {
       children: [
         Text(
           'Günlük Takibiniz',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: AppColors.text,
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(color: AppColors.text, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         const Text(
           'Ölçümlerinize ve günlük kayıtlarınıza buradan ulaşın.',
-          style: TextStyle(
-            color: AppColors.muted,
-            height: 1.5,
-          ),
+          style: TextStyle(color: AppColors.muted, height: 1.5),
         ),
         const SizedBox(height: 24),
         const _SummaryCard(
@@ -156,8 +139,7 @@ class _OverviewPage extends StatelessWidget {
           icon: Icons.query_stats,
           title: 'Ölçüm Ortalamaları',
           value: 'Henüz veri yok',
-          description:
-              'Açlık ve tokluk ortalamaları, ölçüm kayıtlarınızdan hesaplanacak.',
+          description: 'Açlık ve tokluk ortalamaları, ölçüm kayıtlarınızdan hesaplanacak.',
         ),
         const SizedBox(height: 16),
         const _SummaryCard(
@@ -233,10 +215,7 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             description,
-            style: const TextStyle(
-              color: AppColors.muted,
-              height: 1.5,
-            ),
+            style: const TextStyle(color: AppColors.muted, height: 1.5),
           ),
         ],
       ),
@@ -266,11 +245,7 @@ class _EmptyPage extends StatelessWidget {
             CircleAvatar(
               radius: 36,
               backgroundColor: AppColors.lavender,
-              child: Icon(
-                icon,
-                size: 36,
-                color: AppColors.primary,
-              ),
+              child: Icon(icon, size: 36, color: AppColors.primary),
             ),
             const SizedBox(height: 20),
             Text(
@@ -282,10 +257,7 @@ class _EmptyPage extends StatelessWidget {
             Text(
               description,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.muted,
-                height: 1.5,
-              ),
+              style: const TextStyle(color: AppColors.muted, height: 1.5),
             ),
           ],
         ),
@@ -295,10 +267,7 @@ class _EmptyPage extends StatelessWidget {
 }
 
 class _SettingsPage extends StatelessWidget {
-  const _SettingsPage({
-    required this.isSigningOut,
-    required this.onSignOut,
-  });
+  const _SettingsPage({required this.isSigningOut, required this.onSignOut});
 
   final bool isSigningOut;
   final VoidCallback onSignOut;
@@ -319,9 +288,7 @@ class _SettingsPage extends StatelessWidget {
         FilledButton.icon(
           onPressed: isSigningOut ? null : onSignOut,
           icon: const Icon(Icons.logout),
-          label: Text(
-            isSigningOut ? 'Çıkış yapılıyor...' : 'Çıkış Yap',
-          ),
+          label: Text(isSigningOut ? 'Çıkış yapılıyor...' : 'Çıkış Yap'),
         ),
       ],
     );
