@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../glucose/presentation/add_glucose_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/data/auth_service.dart';
 
@@ -15,6 +17,24 @@ class _MainScreenState extends State<MainScreen> {
   bool _isSigningOut = false;
 
   static const _titles = ['Özet', 'Kayıtlar', 'Hatırlatıcılar', 'Ayarlar'];
+
+  Future<void> _openAddGlucose() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => AddGlucoseScreen(userId: user.uid),
+      ),
+    );
+
+    if (!mounted || saved != true) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Ölçüm kaydedildi.')));
+  }
 
   Future<void> _signOut() async {
     if (_isSigningOut) return;
@@ -76,6 +96,15 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
       ),
+      floatingActionButton: _selectedIndex == 0 || _selectedIndex == 1
+          ? FloatingActionButton.extended(
+              onPressed: _openAddGlucose,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Ölçüm ekle'),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         backgroundColor: Colors.white,
