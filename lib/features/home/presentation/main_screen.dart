@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../auth/data/auth_service.dart';
 import '../../glucose/presentation/add_glucose_screen.dart';
 import '../../hba1c/presentation/add_hba1c_screen.dart';
+import '../../insulin/presentation/add_insulin_screen.dart';
 import 'overview_page.dart';
 import 'records_page.dart';
 
@@ -44,28 +45,26 @@ class _MainScreenState extends State<MainScreen> {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) {
-          if (tab == RecordTab.hba1c) {
-            return AddHba1cScreen(userId: user.uid);
-          }
-
-          return AddGlucoseScreen(userId: user.uid);
+          return switch (tab) {
+            RecordTab.glucose => AddGlucoseScreen(userId: user.uid),
+            RecordTab.insulin => AddInsulinScreen(userId: user.uid),
+            RecordTab.hba1c => AddHba1cScreen(userId: user.uid),
+          };
         },
       ),
     );
 
     if (!mounted || saved != true) return;
 
+    final message = switch (tab) {
+      RecordTab.glucose => 'Ölçüm kaydedildi.',
+      RecordTab.insulin => 'İnsülin uygulaması kaydedildi.',
+      RecordTab.hba1c => 'HbA1c sonucu kaydedildi.',
+    };
+
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            tab == RecordTab.hba1c
-                ? 'HbA1c sonucu kaydedildi.'
-                : 'Ölçüm kaydedildi.',
-          ),
-        ),
-      );
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _signOut() async {
@@ -125,6 +124,7 @@ class _MainScreenState extends State<MainScreen> {
               onOpenRecords: () => _openRecords(RecordTab.glucose),
               onOpenReminders: () => _selectPage(2),
               onOpenHba1c: () => _openRecords(RecordTab.hba1c),
+              onOpenInsulin: () => _openRecords(RecordTab.insulin),
             ),
             RecordsPage(
               key: ValueKey('records-${user.uid}'),
@@ -145,9 +145,11 @@ class _MainScreenState extends State<MainScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: Text(
-                _recordTab == RecordTab.hba1c ? 'HbA1c ekle' : 'Ölçüm ekle',
-              ),
+              label: Text(switch (_recordTab) {
+                RecordTab.glucose => 'Ölçüm Ekle',
+                RecordTab.insulin => 'İnsülin Kaydı Ekle',
+                RecordTab.hba1c => 'HbA1c Ekle',
+              }),
             )
           : null,
       bottomNavigationBar: NavigationBar(

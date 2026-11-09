@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../glucose/data/glucose_repository.dart';
 import '../../glucose/domain/glucose_reading.dart';
 import '../../hba1c/presentation/latest_hba1c_card.dart';
+import '../../insulin/presentation/today_insulin_card.dart';
 
 enum _SummaryPeriod {
   daily('Günlük', 1),
@@ -23,12 +24,14 @@ class OverviewPage extends StatefulWidget {
     required this.onOpenRecords,
     required this.onOpenReminders,
     required this.onOpenHba1c,
+    required this.onOpenInsulin,
   });
 
   final String userId;
   final VoidCallback onOpenRecords;
   final VoidCallback onOpenReminders;
   final VoidCallback onOpenHba1c;
+  final VoidCallback onOpenInsulin;
 
   @override
   State<OverviewPage> createState() => _OverviewPageState();
@@ -252,11 +255,10 @@ class _OverviewPageState extends State<OverviewPage> {
           description: 'Hatırlatıcılar bölümünü açmak için dokunun.',
         ),
         const SizedBox(height: 16),
-        const _OverviewCard(
-          icon: Icons.vaccines_outlined,
-          title: 'Bugünkü insülin kayıtları',
-          value: 'İnsülin bölümü hazırlanıyor',
-          description: 'İnsülin kayıtları sonraki adımda eklenecek.',
+        TodayInsulinCard(
+          key: ValueKey('today-insulin-${widget.userId}'),
+          userId: widget.userId,
+          onTap: widget.onOpenInsulin,
         ),
       ],
     );
