@@ -8,6 +8,7 @@ import '../../glucose/domain/glucose_reading.dart';
 import '../../glucose/presentation/glucose_summary_chart.dart';
 import '../../hba1c/presentation/latest_hba1c_card.dart';
 import '../../insulin/presentation/today_insulin_card.dart';
+import '../../reminders/presentation/next_reminder_card.dart';
 
 enum _SummaryPeriod {
   daily('Günlük', 1),
@@ -57,7 +58,6 @@ class _OverviewPageState extends State<OverviewPage>
     _repository = GlucoseRepository(userId: widget.userId);
     _readingsStream = _repository.watchReadings();
 
-    // Tarih değiştiğinde günlük özetin eski günde kalmasını önler.
     _refreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) {
         setState(() {});
@@ -69,6 +69,7 @@ class _OverviewPageState extends State<OverviewPage>
   void dispose() {
     _refreshTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
+
     super.dispose();
   }
 
@@ -340,29 +341,10 @@ class _OverviewPageState extends State<OverviewPage>
             onTap: widget.onOpenHba1c,
             compact: true,
           ),
-          second: _DashboardCard(
-            padding: 14,
+          second: NextReminderCard(
+            key: ValueKey('next-reminder-${widget.userId}'),
+            userId: widget.userId,
             onTap: widget.onOpenReminders,
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _CardHeading(icon: Icons.alarm_outlined, title: 'Hatırlatıcı'),
-                SizedBox(height: 10),
-                Text(
-                  'Hazırlanıyor',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.text,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'Hatırlatıcılar bölümü',
-                  style: TextStyle(color: AppColors.muted, fontSize: 12),
-                ),
-              ],
-            ),
           ),
         ),
         const SizedBox(height: 12),

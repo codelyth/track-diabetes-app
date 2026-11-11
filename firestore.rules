@@ -145,5 +145,63 @@ service cloud.firestore {
 
       allow delete: if isOwner(userId);
     }
+
+    function isValidReminder() {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+            'type',
+            'hour',
+            'minute',
+            'weekdays',
+            'note',
+            'isEnabled',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'type',
+            'hour',
+            'minute',
+            'weekdays',
+            'note',
+            'isEnabled',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.type in ['fasting', 'postMeal', 'insulin']
+          && data.hour is int
+          && data.hour >= 0
+          && data.hour <= 23
+          && data.minute is int
+          && data.minute >= 0
+          && data.minute <= 59
+          && data.weekdays is list
+          && data.weekdays.size() >= 1
+          && data.weekdays.size() <= 7
+          && data.weekdays.hasOnly([1, 2, 3, 4, 5, 6, 7])
+          && data.weekdays.toSet().size() == data.weekdays.size()
+          && data.note is string
+          && data.note.size() <= 200
+          && data.isEnabled is bool
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId}/reminders/{reminderId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+          && isValidReminder()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+          && isValidReminder()
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+
+      allow delete: if isOwner(userId);
+    }
   }
 }

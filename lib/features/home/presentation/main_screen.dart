@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -7,6 +11,7 @@ import '../../auth/data/auth_service.dart';
 import '../../glucose/presentation/add_glucose_screen.dart';
 import '../../hba1c/presentation/add_hba1c_screen.dart';
 import '../../insulin/presentation/add_insulin_screen.dart';
+import '../../reminders/data/reminder_scheduler.dart';
 import '../../reminders/presentation/reminders_page.dart';
 import 'overview_page.dart';
 import 'records_page.dart';
@@ -19,12 +24,161 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  final _notifications = NotificationService.instance;
+
   int _selectedIndex = 0;
   bool _isSigningOut = false;
+  bool _isOpeningNotification = false;
 
   RecordTab _recordTab = RecordTab.glucose;
 
   static const _titles = ['Özet', 'Kayıtlar', 'Hatırlatıcılar', 'Ayarlar'];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _notifications.pendingPayload.addListener(_onNotification);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_initializeNotifications());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifications.pendingPayload.removeListener(_onNotification);
+    super.dispose();
+  }
+
+  Future<void> _initializeNotifications() async {
+    if (!_notifications.isSupported) return;
+
+    try {
+      await _notifications.initialize();
+
+      if (!mounted) return;
+
+      await _openPendingNotification();
+    } catch (error, stackTrace) {
+      debugPrint('Bildirim yönlendirmesi başlatılamadı: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  void _onNotification() {
+    if (_notifications.pendingPayload.value == null) return;
+
+    unawaited(_openPendingNotification());
+  }
+
+  Future<void> _openPendingNotification() async {
+    if (!mounted || _isSigningOut || _isOpeningNotification) {
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    _isOpeningNotification = true;
+
+    try {
+      final payload = _notifications.takePendingPayload();
+
+      if (payload == null) return;
+
+      const prefix = NotificationService.reminderPayloadPrefix;
+
+      if (!payload.startsWith(prefix)) return;
+
+      final decoded = jsonDecode(payload.substring(prefix.length));
+
+      if (decoded is! Map<String, dynamic>) return;
+
+      final payloadUserId = decoded['userId'];
+      final reminderId = decoded['reminderId'];
+
+      if (payloadUserId is! String ||
+          reminderId is! String ||
+          reminderId.isEmpty ||
+          reminderId.contains('/')) {
+        return;
+      }
+
+      if (payloadUserId != user.uid) {
+        _showMessage('Bu bildirim mevcut hesaba ait değil.');
+        return;
+      }
+
+      final document = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('reminders')
+          .doc(reminderId)
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 10));
+
+      if (!mounted ||
+          _isSigningOut ||
+          FirebaseAuth.instance.currentUser?.uid != user.uid) {
+        return;
+      }
+
+      final data = document.data();
+
+      if (!document.exists || data == null || data['isEnabled'] != true) {
+        _showMessage('Bu hatırlatıcı silinmiş veya kapatılmış.');
+        return;
+      }
+
+      // Bildirimdeki tür yerine güncel sunucu kaydını kullan.
+      final type = data['type'];
+
+      final RecordTab tab;
+
+      if (type == 'fasting' || type == 'postMeal') {
+        tab = RecordTab.glucose;
+      } else if (type == 'insulin') {
+        tab = RecordTab.insulin;
+      } else {
+        _showMessage('Hatırlatıcı türü tanınamadı.');
+        return;
+      }
+
+      _openRecords(tab);
+
+      await _openAddRecord();
+    } catch (error, stackTrace) {
+      debugPrint('Bildirimden kayıt formu açılamadı: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (mounted && !_isSigningOut) {
+        _showMessage(
+          'Hatırlatıcı kontrol edilemedi. Bağlantınızı kontrol edin. '
+          'Kaydınızı Kayıtlar bölümünden ekleyebilirsiniz.',
+        );
+      }
+    } finally {
+      _isOpeningNotification = false;
+
+      if (mounted &&
+          !_isSigningOut &&
+          _notifications.pendingPayload.value != null) {
+        unawaited(_openPendingNotification());
+      }
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 
   void _selectPage(int index) {
     setState(() => _selectedIndex = index);
@@ -40,7 +194,7 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _openAddRecord() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user == null) return;
+    if (user == null || _isSigningOut) return;
 
     final tab = _recordTab;
 
@@ -56,7 +210,11 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
 
-    if (!mounted || saved != true) return;
+    if (!mounted ||
+        saved != true ||
+        FirebaseAuth.instance.currentUser?.uid != user.uid) {
+      return;
+    }
 
     final message = switch (tab) {
       RecordTab.glucose => 'Ölçüm kaydedildi.',
@@ -64,9 +222,7 @@ class _MainScreenState extends State<MainScreen> {
       RecordTab.hba1c => 'HbA1c sonucu kaydedildi.',
     };
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    _showMessage(message);
   }
 
   Future<void> _signOut() async {
@@ -75,16 +231,25 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _isSigningOut = true);
 
     try {
-      await NotificationService.instance.cancelTestNotifications();
+      await ReminderScheduler.instance.stopSession();
+      _notifications.clearPendingPayload();
+
       await AuthService.signOut();
     } catch (error) {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        ReminderScheduler.instance.startSession(user.uid);
+      }
+
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text(AuthService.errorMessage(error))),
-        );
+      _showMessage(
+        'Çıkış tamamlanamadı. Tekrar deneyin. '
+        'Oturumunuz açıksa hatırlatıcıları Yenile ile kontrol edin.',
+      );
+
+      debugPrint('Çıkış işlemi başarısız: $error');
     } finally {
       if (mounted) {
         setState(() => _isSigningOut = false);
@@ -137,14 +302,17 @@ class _MainScreenState extends State<MainScreen> {
                 setState(() => _recordTab = tab);
               },
             ),
-            RemindersPage(key: ValueKey('reminders-${user.uid}')),
+            RemindersPage(
+              key: ValueKey('reminders-${user.uid}'),
+              userId: user.uid,
+            ),
             _SettingsPage(isSigningOut: _isSigningOut, onSignOut: _signOut),
           ],
         ),
       ),
       floatingActionButton: _selectedIndex == 1
           ? FloatingActionButton.extended(
-              onPressed: _openAddRecord,
+              onPressed: _isSigningOut ? null : _openAddRecord,
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),

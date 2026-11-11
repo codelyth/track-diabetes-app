@@ -11,6 +11,9 @@ class NotificationService {
 
   static const _instantTestId = 900001;
   static const _scheduledTestId = 900002;
+  static const reminderPayloadPrefix = 'diabetes-reminder:';
+
+  final ValueNotifier<String?> pendingPayload = ValueNotifier<String?>(null);
 
   static const _channel = AndroidNotificationChannel(
     'reminder_tests_v1',
@@ -38,6 +41,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void>? _initialization;
+  bool _launchDetailsRead = false;
 
   bool get isSupported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -77,6 +81,9 @@ class NotificationService {
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('ic_notification'),
       ),
+      onDidReceiveNotificationResponse: (response) {
+        _receivePayload(response.payload);
+      },
     );
 
     if (initialized != true) {
@@ -86,6 +93,35 @@ class NotificationService {
     await _android.createNotificationChannel(_channel);
 
     tz_data.initializeTimeZones();
+
+    if (!_launchDetailsRead) {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+
+      _launchDetailsRead = true;
+
+      if (details?.didNotificationLaunchApp == true &&
+          pendingPayload.value == null) {
+        _receivePayload(details?.notificationResponse?.payload);
+      }
+    }
+  }
+
+  void _receivePayload(String? payload) {
+    if (payload == null || !payload.startsWith(reminderPayloadPrefix)) {
+      return;
+    }
+
+    pendingPayload.value = payload;
+  }
+
+  String? takePendingPayload() {
+    final payload = pendingPayload.value;
+    pendingPayload.value = null;
+    return payload;
+  }
+
+  void clearPendingPayload() {
+    pendingPayload.value = null;
   }
 
   Future<bool> notificationsEnabled() async {
@@ -136,15 +172,10 @@ class NotificationService {
     );
   }
 
-  /// Aynı test yeniden başlatıldığında önceki zamanlama değiştirilir.
-  ///
-  /// true: kesin zamanlama kullanıldı.
-  /// false: yaklaşık zamanlama kullanıldı; Android bildirimi geciktirebilir.
   Future<bool> scheduleTestNotification() async {
     await initialize();
     await _ensureNotificationPermission();
 
-    // Zamanlama öncesinde saat dilimi verisini hazırla.
     tz_data.initializeTimeZones();
 
     final timezone = await FlutterTimezone.getLocalTimezone();
@@ -155,9 +186,8 @@ class NotificationService {
       _ => tz.getLocation(identifier),
     };
 
-    final scheduledDate = tz.TZDateTime.now(
-      location,
-    ).add(const Duration(minutes: 1));
+    final scheduledDate = tz.TZDateTime.now(location)
+        .add(const Duration(minutes: 1));
 
     final useExactAlarm = await exactAlarmsEnabled();
 

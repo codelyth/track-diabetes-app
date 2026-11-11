@@ -1,195 +1,278 @@
-# Şeker Takibi Uygulaması
+# 🩸 Track Diabetes
 
-Flutter ile geliştirilen, Android için kişisel diyabet takip uygulaması. Diyabetli kullanıcıların kan şekeri ölçümlerini, insülin uygulamalarını ve laboratuvar HbA1c sonuçlarını tek yerde takip etmesini kolaylaştırmayı amaçlar.
+> An Android diabetes tracking application built with Flutter and Firebase.
+> Track glucose measurements, HbA1c results, insulin administration records,
+> and personalized reminders through a compact, easy-to-use interface.
 
-> **Durum:** Erken geliştirme aşamasında. Flutter projesi Android emülatöründe çalıştırıldı. Tema ve giriş ekranının ilk kodları hazırlandı; uygulamaya aktarılması ve doğrulanması devam ediyor. Firebase, veri kayıtları, bildirimler ve widget henüz entegre edilmedi.
+![Status](https://img.shields.io/badge/Status-In%20Development-orange)
+![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
+![Flutter](https://img.shields.io/badge/Framework-Flutter-02569B?logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Language-Dart-0175C2?logo=dart&logoColor=white)
+![Firebase](https://img.shields.io/badge/Backend-Firebase-DD2C00?logo=firebase&logoColor=white)
 
-## Proje hedefleri
+## 📌 Project Overview
 
-- Basit, Türkçe ve kullanıcı dostu arayüz.
-- Açlık ve tokluk ölçümlerini ayrı takip etme.
-- Kullanıcının belirlediği zamanlarda ölçüm ve insülin kaydı hatırlatmaları.
-- Ana ekran widget’ından kayıtlara hızlı erişim.
-- Samsung Galaxy A36 üzerinde gerçek cihaz testleriyle doğrulama.
+Track Diabetes helps users organize their daily diabetes-related records
+in one place.
 
-## Planlanan Özellikler
+The application combines fasting and post-meal glucose tracking,
+laboratory HbA1c results, insulin administration records, and recurring
+local reminders. A compact dashboard provides quick access to recent
+records, measurement averages, and upcoming reminders.
 
-### Kan şekeri kayıtları
+The project is under active development. Current development and emulator
+testing focus on Android.
 
-- Açlık veya tokluk türü, mg/dL değeri, tarih, saat ve isteğe bağlı not.
-- Gün içinde her iki türden de istenildiği kadar kayıt.
-- Kayıt ekleme, düzenleme ve silme.
-- Tarih, saat, tür ve değer sütunlarından oluşan ölçüm tablosu.
-- Bugün, son 7 gün, son 30 gün ve özel tarih aralığı filtreleri.
-- Açlık, tokluk ve tüm kayıtlar için tür filtresi.
+## ✨ Features
 
-### Dashboard
+### 🔐 Authentication
 
-- Son kaydedilen ölçüm ve ölçüm zamanı.
-- Günlük, haftalık ve aylık özetler.
-- Açlık ve tokluk için ayrı ortalamalar ve kayıt sayıları.
-- Seçilen filtrelerle tutarlı özetler, grafik ve kayıtlar.
-- Son laboratuvar HbA1c sonucu ve test tarihi.
-- Günün insülin kayıtları ve sıradaki hatırlatıcı.
+- Email and password registration.
+- Sign-in and password reset.
+- Persistent authentication state.
+- Sign-out with cancellation of scheduled local notifications.
+- User-specific Firestore records.
 
-Ortalamalar yalnızca girilen ölçümlerin aritmetik ortalamasıdır. Kayıt bulunmayan dönemlerde sıfır yerine boş durum gösterilir.
+### 🩸 Glucose Tracking
 
-### İnsülin takibi
+- Separate fasting and post-meal measurement types.
+- Multiple measurements per day.
+- Measurement date, time, and optional notes.
+- Record editing and deletion.
+- Date-range and measurement-type filters.
+- Tabular records and measurement details.
 
-- İnsülin adı/türü, uygulanan doz, uygulama zamanı ve not.
-- Planlanan uygulamalar için “Henüz kaydedilmedi”, “Yapıldı” ve “Atlandı” durumları.
-- Planlanan uygulama ile gerçekleşen enjeksiyon kaydının ayrılması.
-- Kullanıcı onayı olmadan uygulamaların yapılmış sayılmaması.
+### 🧪 HbA1c Tracking
 
-### HbA1c
+- Laboratory result entry with test date and optional notes.
+- Result history with editing and deletion.
+- Latest HbA1c result displayed on the dashboard.
 
-- Laboratuvar sonucu ve test tarihi ekleme.
-- Sonuç geçmişi, düzenleme ve silme.
-- Türkçe ondalık virgül desteği.
-- HbA1c sonuçlarının kan şekeri ortalamalarından ayrı tutulması.
+### 💉 Insulin Records
 
-### Hatırlatıcılar ve widget
+- Insulin name, category, dose, administration date, and time.
+- Preset insulin names and manual name entry.
+- Optional notes.
+- Record editing and deletion.
+- Today's administration records displayed on the dashboard.
 
-- Açlık, tokluk ve insülin kaydı için bağımsız hatırlatıcılar.
-- Aynı gün için birden fazla saat ve tekrar günü seçimi.
-- Bildirimden kayıt ekranına geçiş ve erteleme.
-- Kompakt ve geniş Android ana ekran widget’ları.
-- Widget üzerinde son ölçüm, kayıt zamanı ve hızlı ölçüm ekleme.
-- Geniş widget üzerinde sıradaki hatırlatıcı.
-- Widget’ta ölçüm değerini gizleme tercihi.
+### 📊 Dashboard
 
-### Hesap ve veri yönetimi
+- Latest glucose measurement.
+- Daily, weekly, and monthly measurement summaries.
+- Separate fasting and post-meal averages.
+- Combined glucose average.
+- Glucose chart with a measurement-average reference line.
+- Latest HbA1c result.
+- Next planned reminder with its date and time.
+- Quick navigation through dashboard cards.
 
-- Firebase Authentication ile e-posta/şifre girişi.
-- Hesap oluşturma, şifre sıfırlama ve çıkış.
-- Cloud Firestore ile kullanıcıya ait kayıtların saklanması.
-- Kullanıcı verilerini ayıran erişim kuralları.
-- Bağlantı ve senkronizasyon durumlarının açıkça gösterilmesi.
+### 🔔 Reminders and Notifications
 
-## Temel davranış kuralları
+- Fasting glucose, post-meal glucose, and insulin tracking reminders.
+- Configurable time and repeat weekdays.
+- Reminder creation, editing, deletion, and enable/disable controls.
+- Reminder settings stored in Firestore.
+- Local notification scheduling on Android.
+- Exact scheduling when permission is available.
+- Approximate scheduling when exact scheduling is unavailable.
+- Notification permission controls and test notifications.
+- Explicit 24-hour time display for upcoming reminders.
+- Notification taps open the corresponding record-entry form.
+- Account and reminder validation before opening a form.
 
-- Ölçüm türü saatten tahmin edilmez; kullanıcı tarafından seçilir.
-- Ölçüm eklemek için hatırlatıcı oluşturulmuş olması gerekmez.
-- Bildirimi kapatmak veya ertelemek, ölçüm ya da enjeksiyon yapıldığı anlamına gelmez.
-- Kayıt eksikliği otomatik olarak “Atlandı” şeklinde yorumlanmaz.
-- Son ölçüm her zaman tarih ve saatiyle gösterilir; canlı değer gibi sunulmaz.
-- Bildirimlerin görünmesi Android izinleri ve cihaz ayarlarına bağlıdır.
+Reminder notifications do not automatically create glucose or insulin records.
 
-## Teknolojiler
+## 🛠️ Technology Stack
 
-| Teknoloji | Kullanım | Durum |
-| --- | --- | --- |
-| Flutter / Dart | Mobil uygulama | Kullanılıyor |
-| Material 3 | Arayüz bileşenleri | İlk tema kodları hazır |
-| Firebase Authentication | Kimlik doğrulama | Planlandı |
-| Cloud Firestore | Veri saklama | Planlandı |
-| Android yerel bildirimleri | Hatırlatıcılar | Planlandı |
-| Android App Widget | Ana ekran widget’ı | Planlandı |
+| Area | Technology |
+| --- | --- |
+| Application | Flutter |
+| Language | Dart |
+| UI | Material 3 |
+| Authentication | Firebase Authentication |
+| Database | Cloud Firestore |
+| Notifications | flutter_local_notifications |
+| Time zones | timezone and flutter_timezone |
+| Charts | Flutter CustomPainter |
+| Access control | Firestore Security Rules |
+| Development | VS Code and Android Studio |
+| Version control | Git and GitHub |
 
-Bildirim, grafik, durum yönetimi ve widget paketleri geliştirme sırasında seçilecektir.
+## 🗂️ Project Structure
 
-## Tasarım
+```text
+lib/
+├── main.dart
+├── app.dart
+├── firebase_options.dart
+├── core/
+│   ├── notifications/
+│   └── theme/
+└── features/
+    ├── auth/
+    ├── glucose/
+    ├── hba1c/
+    ├── home/
+    ├── insulin/
+    └── reminders/
 
-Arayüz, Stitch ile hazırlanan ekran tasarımlarını referans alır:
-
-- Mor/lila renk paleti ve açık arka plan.
-- Yuvarlak kartlar, belirgin işlem düğmeleri ve okunaklı alanlar.
-- Alt menü: **Özet · Kayıtlar · Hatırlatıcılar · Ayarlar**.
-- Farklı ekran boyutlarına ve klavye açılmasına uyumlu yerleşim.
-
-Eksik ekranlar ve etkileşim durumları aynı tasarım diliyle tamamlanacaktır.
-
-## Geliştirme ortamı
-
-İlk çalıştırmada kullanılan ortam:
-
-- Flutter 3.47.9
-- Dart 3.13.7
-- Windows 11
-- Android Studio ve Android SDK
-- Android 15 / API 35 Google APIs x86_64 emülatörü
-
-Test profili: 6,7 inç, 1080 × 2340 çözünürlük, 3072 MB RAM. Bu profil Galaxy A36 ekranına yaklaşmak içindir; Samsung One UI davranışını birebir taklit etmez.
-
-## Kurulum ve çalıştırma
-
-1. Depoyu klonlayın ve proje kök dizinini açın.
-2. Flutter ve Android ortamını kontrol edin:
-
-```bash
-flutter doctor
+test/
+android/
+firestore.rules
 ```
 
-3. Bağımlılıkları indirin:
+Feature modules separate presentation, data access, and domain models
+where applicable.
+
+## 🗄️ Data Organization
+
+Application records are stored under the authenticated user's document:
+
+```text
+users/{userId}/
+├── glucose_readings/
+├── hba1c_results/
+├── insulin_entries/
+└── reminders/
+```
+
+Firestore Security Rules restrict access to the matching authenticated
+user and validate the permitted fields and values.
+
+Reminder configurations are stored in Firestore, while notification
+schedules are installed locally on each device.
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Flutter SDK with a compatible Dart SDK.
+- Android Studio and the required Android SDK components.
+- An Android emulator or a physical Android device.
+- A Firebase project with Authentication and Cloud Firestore enabled.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/codelyth/track-diabetes-app.git
+cd track-diabetes-app
+```
+
+### 2. Install dependencies
 
 ```bash
 flutter pub get
 ```
 
-4. Android emülatörünü başlatın veya USB hata ayıklaması açık bir Android cihaz bağlayın:
+### 3. Configure Firebase
+
+Enable Email/Password authentication and create a Cloud Firestore database
+in your Firebase project.
+
+Install the Firebase CLI, sign in, and activate the FlutterFire CLI:
+
+```bash
+firebase login
+dart pub global activate flutterfire_cli
+```
+
+Configure the Android application:
+
+```bash
+dart pub global run flutterfire_cli:flutterfire configure --platforms=android
+```
+
+Use your own Firebase project configuration. Generated Firebase
+configuration files are excluded from this repository.
+
+### 4. Publish Firestore rules
+
+Copy the contents of `firestore.rules` into:
+
+**Firebase Console → Firestore Database → Rules**
+
+Publish the rules before using the application's data features.
+
+### 5. Run the application
 
 ```bash
 flutter devices
-```
-
-5. Uygulamayı çalıştırın:
-
-```bash
 flutter run -d <device-id>
 ```
 
-Cihaz kimliği, `flutter devices` çıktısındaki değer olmalıdır.
+### 6. Configure notifications
 
-Firebase henüz entegre edilmediği için mevcut başlangıç sürümünde Firebase kurulumu gerekmez. Entegrasyon tamamlandığında yapılandırma adımları eklenecektir.
+Open the Reminders section and grant notification permission.
 
-## İlk arayüz için önerilen yapı
+For more precise delivery, enable exact alarm access when available.
+Check the next planned date and time before testing a reminder.
 
-Aşağıdaki yapı, tema ve giriş ekranı için hazırlanan ilk kodların hedef düzenidir:
+## ✅ Development Checks
 
-```text
-lib/
-  main.dart
-  app.dart
-  core/
-    theme/
-      app_theme.dart
-  features/
-    auth/
-      presentation/
-        login_screen.dart
+Format the source code:
+
+```bash
+dart format lib
 ```
 
-Yeni özellikler geliştikçe ilgili modeller, veri erişimi ve ekranlar kendi özellik klasörleri altında eklenecektir.
+Run static analysis:
 
-## Yol haritası
+```bash
+flutter analyze
+```
 
-- [x] Flutter ve Android geliştirme ortamının kurulması
-- [x] Boş Flutter projesinin Android emülatöründe çalıştırılması
-- [x] Stitch ekran tasarımlarının hazırlanması
-- [x] Ortak tema ve giriş ekranının uygulanıp doğrulanması
-- [ ] Kayıt ve şifre sıfırlama ekranları
-- [x] Firebase Authentication entegrasyonu
-- [x] Firestore veri modeli ve erişim kuralları
-- [x] Kan şekeri kayıtları ve filtreli tablo
-- [x] Dashboard, ortalamalar ve grafik
-- [x] İnsülin uygulama takibi
-- [x] HbA1c kayıtları
-- [ ] Yerel hatırlatıcılar ve bildirim izinleri
-- [ ] Android ana ekran widget’ları
-- [ ] Ayarlar ve profil
-- [ ] Galaxy A36 üzerinde bildirim, widget ve günlük kullanım testleri
+Run automated tests:
 
-## Veri gizliliği
+```bash
+flutter test
+```
 
-Gerçek sağlık verileri, kullanıcı şifreleri, servis hesabı anahtarları ve imzalama anahtarları depoya eklenmemelidir. Örnek veriler kurgusal olmalıdır.
+Notification delivery also requires device testing. Passing static
+analysis or widget tests does not verify Android notification delivery.
 
-Firebase erişim kuralları ve kimlik doğrulama kontrolleri, gerçek kullanıcı verileriyle kullanımdan önce uygulanıp test edilecektir. Uçtan uca şifreleme bu projenin mevcut bir özelliği değildir.
+## 📱 Notification Behavior
 
-## Kullanım kapsamı
+- Reminder times follow the device's configured local time zone.
+- Scheduled local notifications can run while the application is in
+  the background.
+- Approximate scheduling may deliver notifications later than the selected time.
+- Notification visibility, sound, and delivery can be affected by device
+  permissions, battery restrictions, and Do Not Disturb settings.
+- Force-stopping the application can prevent notification delivery.
+- Remote reminder changes are synchronized when the application connects
+  to Firestore; they are not instantly pushed to a closed application.
+- Upcoming reminder cards show the planned recurrence, not confirmation
+  that a notification was delivered.
+- Opening a record form from a notification requires connectivity to
+  validate the current reminder.
 
-Uygulama manuel kayıt ve hatırlatma amacıyla geliştirilmektedir. Sürekli glikoz izleme sistemi değildir; insülin dozu hesaplamaz ve tedavi önerisi üretmez. HbA1c alanı kullanıcı tarafından girilen laboratuvar sonuçlarını saklar.
+## 🧭 Roadmap
 
-## Geliştirici
+- [x] Firebase authentication and password reset.
+- [x] Glucose tracking and record management.
+- [x] HbA1c tracking.
+- [x] Insulin administration records.
+- [x] Compact dashboard and glucose chart.
+- [x] Recurring reminders and local notifications.
+- [x] Upcoming reminder display.
+- [x] Navigation from notifications to record-entry forms.
+- [ ] Reminder snoozing.
+- [ ] Home-screen widgets.
+- [ ] Profile and application settings.
+- [ ] Additional notification privacy controls.
+- [ ] Broader physical-device, reboot, and time-zone testing.
+- [ ] Expanded automated tests, including Firestore access rules.
+- [ ] Release signing and Google Play preparation.
 
-Yaprak Cihantimur
+## ℹ️ Scope
 
+Track Diabetes is a personal tracking and reminder application.
+
+It does not calculate insulin doses, recommend treatment, or provide
+medical diagnoses. Measurement summaries are calculated from the records
+entered by the user.
+
+## 👩‍💻 Developer
+
+Developed by [Yaprak Cihantimur · codelyth](https://github.com/codelyth).
