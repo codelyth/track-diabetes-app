@@ -1,11 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/notifications/notification_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/data/auth_service.dart';
 import '../../glucose/presentation/add_glucose_screen.dart';
 import '../../hba1c/presentation/add_hba1c_screen.dart';
 import '../../insulin/presentation/add_insulin_screen.dart';
+import '../../reminders/presentation/reminders_page.dart';
 import 'overview_page.dart';
 import 'records_page.dart';
 
@@ -73,6 +75,7 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _isSigningOut = true);
 
     try {
+      await NotificationService.instance.cancelTestNotifications();
       await AuthService.signOut();
     } catch (error) {
       if (!mounted) return;
@@ -134,7 +137,7 @@ class _MainScreenState extends State<MainScreen> {
                 setState(() => _recordTab = tab);
               },
             ),
-            const _RemindersPlaceholder(),
+            RemindersPage(key: ValueKey('reminders-${user.uid}')),
             _SettingsPage(isSigningOut: _isSigningOut, onSignOut: _signOut),
           ],
         ),
@@ -178,45 +181,6 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Ayarlar',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RemindersPlaceholder extends StatelessWidget {
-  const _RemindersPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircleAvatar(
-              radius: 36,
-              backgroundColor: AppColors.lavender,
-              child: Icon(
-                Icons.notifications_active_outlined,
-                size: 36,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Hatırlatıcılar',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Ölçüm ve insülin kaydı hatırlatıcılarınızı '
-              'buradan yöneteceksiniz.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, height: 1.5),
-            ),
-          ],
-        ),
       ),
     );
   }
