@@ -18,50 +18,34 @@ class ReminderScheduler {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
-  Future<void> _queue = Future<void>.value();
-
   String? _userId;
   int _generation = 0;
-
-  static const _payloadPrefix = 'diabetes-reminder:';
-
-  static const _details = NotificationDetails(
-    android: AndroidNotificationDetails(
-      'diabetes_reminders_v1',
-      'Takip hatırlatıcıları',
-      channelDescription: 'Ölçüm ve insülin takip hatırlatıcıları.',
-      icon: 'ic_notification',
-      importance: Importance.high,
-      priority: Priority.high,
-      visibility: NotificationVisibility.private,
-      autoCancel: true,
-    ),
-  );
 
   void startSession(String userId) {
     _generation++;
     _userId = userId;
+
+    NotificationService.instance.setSessionUser(userId);
   }
 
-  /// Sayfa kapanınca devam eden eski senkronizasyonları durdurur.
-  /// Önceden kurulmuş bildirimleri iptal etmez.
   void detachSession(String userId) {
     if (_userId != userId) return;
 
     _generation++;
     _userId = null;
+
+    // Uygulama arka plana geçtiğinde mevcut zamanlamalar korunur.
+    // Gerçek çıkış işlemi stopSession tarafından yönetilir.
   }
 
-  Future<T> _enqueue<T>(Future<T> Function() operation) {
-    final result = _queue.then((_) => operation());
-
-    // Bir işlem hata verse de sonraki işlemler çalışabilsin.
-    _queue = result.then<void>(
-      (_) {},
-      onError: (Object error, StackTrace stackTrace) {},
+  String _scheduleKey(Reminder reminder) {
+    return NotificationService.scheduleKey(
+      type: reminder.type.code,
+      hour: reminder.hour,
+      minute: reminder.minute,
+      weekdays: reminder.weekdays,
+      note: reminder.note,
     );
-
-    return result;
   }
 
   Future<String> synchronize({
@@ -70,17 +54,16 @@ class ReminderScheduler {
   }) {
     final generation = _generation;
     final items = List<Reminder>.of(reminders);
+    final service = NotificationService.instance;
 
     bool isCurrentSession() {
       return generation == _generation && _userId == userId;
     }
 
-    return _enqueue(() async {
+    return service.runExclusive(() async {
       if (!isCurrentSession()) {
         return 'Zamanlama oturumu değişti.';
       }
-
-      final service = NotificationService.instance;
 
       if (!service.isSupported) {
         return 'Bildirim zamanlaması şu anda Android için kullanılabilir.';
@@ -93,10 +76,14 @@ class ReminderScheduler {
       }
 
       final notificationsEnabled = await service.notificationsEnabled();
+
       final activeReminders = items.where((item) => item.isEnabled).toList()
         ..sort((first, second) => first.id.compareTo(second.id));
 
-      // Hazırlık işlemleri başarılı olmadan mevcut zamanlamayı silmeyelim.
+      final activeById = {
+        for (final reminder in activeReminders) reminder.id: reminder,
+      };
+
       tz.Location? location;
 
       if (notificationsEnabled && activeReminders.isNotEmpty) {
@@ -119,16 +106,37 @@ class ReminderScheduler {
         return 'Zamanlama oturumu değişti.';
       }
 
-      // Yalnızca gerçek hatırlatıcı zamanlamalarını temizle.
-      // Test bildirimlerine dokunma.
       final pending = await _plugin.pendingNotificationRequests();
+
+      // Test, işlem sonucu ve korunan erteleme kimliklerini ayır.
+      final usedIds = <int>{...NotificationService.reservedIds};
 
       for (final notification in pending) {
         if (!isCurrentSession()) {
           return 'Zamanlama oturumu değişti.';
         }
 
-        if (notification.payload?.startsWith(_payloadPrefix) ?? false) {
+        final data = NotificationService.parseReminderPayload(
+          notification.payload,
+        );
+
+        if (data == null) {
+          usedIds.add(notification.id);
+          continue;
+        }
+
+        final reminder = activeById[data['reminderId']];
+
+        final preserveSnooze =
+            notificationsEnabled &&
+            data['kind'] == 'snooze' &&
+            data['userId'] == userId &&
+            reminder != null &&
+            data['scheduleKey'] == _scheduleKey(reminder);
+
+        if (preserveSnooze) {
+          usedIds.add(notification.id);
+        } else {
           await _plugin.cancel(id: notification.id);
         }
       }
@@ -142,7 +150,6 @@ class ReminderScheduler {
         return 'Aktif hatırlatıcı yok.';
       }
 
-      final usedIds = <int>{900001, 900002};
       var usedApproximateScheduling = !canUseExactAlarms;
 
       try {
@@ -155,10 +162,12 @@ class ReminderScheduler {
             }
 
             final key = '$userId/${reminder.id}/$weekday';
-            var notificationId = _notificationId(key);
+
+            // Normal tekrarlar alt aralıkta, ertelemeler üst aralıkta.
+            var notificationId = NotificationService.stableHash(key) + 1;
 
             while (!usedIds.add(notificationId)) {
-              notificationId = notificationId == 2000000000
+              notificationId = notificationId >= 1000000000
                   ? 1
                   : notificationId + 1;
             }
@@ -171,46 +180,26 @@ class ReminderScheduler {
             );
 
             final payload =
-                '$_payloadPrefix${jsonEncode({'userId': userId, 'reminderId': reminder.id, 'type': reminder.type.code})}';
+                '${NotificationService.reminderPayloadPrefix}${jsonEncode({'userId': userId, 'reminderId': reminder.id, 'type': reminder.type.code, 'kind': 'regular', 'scheduleKey': _scheduleKey(reminder)})}';
 
             Future<void> schedule(AndroidScheduleMode mode) async {
-              debugPrint(
-                '[HATIRLATICI] '
-                'tur=${reminder.type.code} '
-                'gun=$weekday '
-                'simdi=${tz.TZDateTime.now(location!)} '
-                'planlanan=$scheduledDate '
-                'saatDilimi=${location.name} '
-                'yontem=${mode.name}',
-              );
-
               await _plugin.zonedSchedule(
                 id: notificationId,
                 title: 'Şeker Takibi',
-                body: switch (reminder.type) {
-                  ReminderType.fasting =>
-                    'Açlık ölçümü hatırlatıcınızın zamanı geldi.',
-                  ReminderType.postMeal =>
-                    'Tokluk ölçümü hatırlatıcınızın zamanı geldi.',
-                  ReminderType.insulin =>
-                    'İnsülin takip hatırlatıcınızın zamanı geldi.',
-                },
+                body: NotificationService.reminderBody(reminder.type.code),
                 scheduledDate: scheduledDate,
-                notificationDetails: _details,
+                notificationDetails: NotificationService.reminderDetails,
                 androidScheduleMode: mode,
                 matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
                 payload: payload,
               );
 
-              final pending = await _plugin.pendingNotificationRequests();
-              final registered = pending.any(
-                (notification) => notification.id == notificationId,
-              );
-
               debugPrint(
                 '[HATIRLATICI] '
-                'id=$notificationId '
-                'cihazdaKayitli=$registered',
+                'tur=${reminder.type.code} '
+                'gun=$weekday '
+                'planlanan=$scheduledDate '
+                'yontem=${mode.name}',
               );
             }
 
@@ -221,10 +210,7 @@ class ReminderScheduler {
                     : AndroidScheduleMode.inexactAllowWhileIdle,
               );
             } on PlatformException catch (error) {
-              // İzin, kontrol ile zamanlama arasında kaldırılmış olabilir.
-              if (error.code != 'exact_alarms_not_permitted') {
-                rethrow;
-              }
+              if (error.code != 'exact_alarms_not_permitted') rethrow;
 
               usedApproximateScheduling = true;
 
@@ -246,15 +232,17 @@ class ReminderScheduler {
     });
   }
 
-  /// Çıkış sırasında yeni zamanlama yapılmasını engeller ve
-  /// cihazdaki tüm uygulama bildirimlerini iptal eder.
   Future<void> stopSession() {
     _generation++;
     _userId = null;
 
-    return _enqueue(() async {
-      final service = NotificationService.instance;
+    final service = NotificationService.instance;
 
+    // Devam eden erteleme işlemleri de bu oturumu kullanamasın.
+    service.setSessionUser(null);
+    service.clearPendingPayload();
+
+    return service.runExclusive(() async {
       if (!service.isSupported) return;
 
       await service.initialize();
@@ -294,16 +282,5 @@ class ReminderScheduler {
     }
 
     return candidate;
-  }
-
-  int _notificationId(String value) {
-    // Dart hashCode yerine yeniden açılışlarda aynı sonucu veren kimlik.
-    var hash = 0;
-
-    for (final codeUnit in value.codeUnits) {
-      hash = (hash * 31 + codeUnit) % 2000000000;
-    }
-
-    return hash + 1;
   }
 }
