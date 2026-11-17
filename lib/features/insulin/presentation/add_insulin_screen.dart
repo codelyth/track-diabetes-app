@@ -2,14 +2,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../reminders/data/insulin_occurrence_repository.dart';
+import '../../reminders/domain/insulin_occurrence.dart';
 import '../data/insulin_repository.dart';
 import '../domain/insulin_entry.dart';
 
 class AddInsulinScreen extends StatefulWidget {
-  const AddInsulinScreen({super.key, required this.userId, this.initialEntry});
+  const AddInsulinScreen({
+    super.key,
+    required this.userId,
+    this.initialEntry,
+    this.plannedOccurrence,
+  }) : assert(
+         initialEntry == null || plannedOccurrence == null,
+         'Düzenleme ve yeni plan kaydı birlikte kullanılamaz.',
+       );
 
   final String userId;
   final InsulinEntry? initialEntry;
+  final InsulinOccurrence? plannedOccurrence;
 
   @override
   State<AddInsulinScreen> createState() => _AddInsulinScreenState();
@@ -195,6 +206,7 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
           doseUnits: dose,
           administeredAt: _administeredAt,
           note: _noteController.text,
+          occurrence: widget.plannedOccurrence,
         );
       } else {
         await _repository.updateEntry(
@@ -210,6 +222,9 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
       if (!mounted) return;
 
       Navigator.of(context).pop(true);
+    } on InsulinPlanException catch (error) {
+      if (!mounted) return;
+      _showMessage(error.message);
     } on FirebaseException catch (error) {
       if (!mounted) return;
 
@@ -219,13 +234,15 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
               'Firestore kurallarını kontrol edin.',
         'not-found' =>
           'Bu kayıt artık bulunamıyor. Kayıtlar ekranına geri dönün.',
+        'unavailable' || 'failed-precondition' =>
+          'Plan kaydı için internet bağlantısı gerekiyor. '
+              'Bağlantınızı kontrol edin.',
         _ => 'Kayıt tamamlanamadı. Bağlantınızı kontrol edip tekrar deneyin.',
       };
 
       _showMessage(message);
     } catch (_) {
       if (!mounted) return;
-
       _showMessage('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
     } finally {
       if (mounted) {

@@ -111,9 +111,10 @@ class AccountDeletionService {
 
       const collections = <String, String>{
         'reminders': 'Hatırlatıcılar',
-        'glucose_readings': 'Şeker ölçümleri',
-        'hba1c_results': 'HbA1c sonuçları',
-        'insulin_entries': 'İnsülin kayıtları',
+        'glucose_readings': 'Şeker Ölçümleri',
+        'hba1c_results': 'HbA1c Sonuçları',
+        'insulin_entries': 'İnsülin Kayıtları',
+        'insulin_occurrences': 'İnsülin Takip Durumları',
       };
 
       for (final entry in collections.entries) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'next_reminder_card.dart';
+import 'insulin_tracking_page.dart';
 
 import 'package:flutter/material.dart';
 
@@ -320,6 +321,21 @@ class _RemindersPageState extends State<RemindersPage>
           onPressed: _isWorking ? null : () => _openForm(),
           icon: const Icon(Icons.add),
           label: const Text('Hatırlatıcı Ekle'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _isWorking
+              ? null
+              : () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          InsulinTrackingPage(userId: widget.userId),
+                    ),
+                  );
+                },
+          icon: const Icon(Icons.checklist_outlined),
+          label: const Text('Bugünkü insülin takibi'),
         ),
         const SizedBox(height: 20),
         if (_isWorking) ...[

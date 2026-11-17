@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../reminders/data/insulin_occurrence_repository.dart';
+import '../../reminders/domain/insulin_occurrence.dart';
 import '../domain/insulin_entry.dart';
 
 class InsulinRepository {
@@ -37,6 +39,7 @@ class InsulinRepository {
     required double doseUnits,
     required DateTime administeredAt,
     String note = '',
+    InsulinOccurrence? occurrence,
   }) async {
     _validate(
       insulinName: insulinName,
@@ -45,12 +48,25 @@ class InsulinRepository {
       note: note,
     );
 
-    await _entries.add({
+    final data = <String, dynamic>{
       'insulinName': insulinName.trim(),
       'kind': kind.code,
       'doseUnits': doseUnits,
       'administeredAt': Timestamp.fromDate(administeredAt),
       'note': note.trim(),
+    };
+
+    if (occurrence != null) {
+      await InsulinOccurrenceRepository(
+        userId: userId,
+        firestore: _firestore,
+      ).complete(occurrence: occurrence, insulinData: data);
+
+      return;
+    }
+
+    await _entries.add({
+      ...data,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -71,6 +87,7 @@ class InsulinRepository {
       note: note,
     );
 
+    // Varsa occurrenceId alanı korunur.
     await _entries.doc(id).update({
       'insulinName': insulinName.trim(),
       'kind': kind.code,
@@ -81,8 +98,44 @@ class InsulinRepository {
     });
   }
 
-  Future<void> deleteEntry(String id) {
-    return _entries.doc(id).delete();
+  Future<void> deleteEntry(String id) async {
+    final reference = _entries.doc(id);
+
+    await _firestore.runTransaction<void>((transaction) async {
+      final entry = await transaction.get(reference);
+
+      if (!entry.exists) return;
+
+      final occurrenceId = entry.data()?['occurrenceId'];
+
+      DocumentReference<Map<String, dynamic>>? occurrenceRef;
+
+      if (occurrenceId is String) {
+        occurrenceRef = _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('insulin_occurrences')
+            .doc(occurrenceId);
+
+        final occurrence = await transaction.get(occurrenceRef);
+
+        if (occurrence.exists) {
+          final data = occurrence.data();
+
+          if (data?['status'] != 'completed' || data?['insulinEntryId'] != id) {
+            throw const InsulinPlanException(
+              'Bağlı plan doğrulanamadı. Ekranı yenileyin.',
+            );
+          }
+        }
+      }
+
+      if (occurrenceRef != null) {
+        transaction.delete(occurrenceRef);
+      }
+
+      transaction.delete(reference);
+    });
   }
 
   void _validate({

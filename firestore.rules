@@ -7,19 +7,302 @@ service cloud.firestore {
           && request.auth.uid == userId;
     }
 
+    function isDeleting(userId) {
+      return exists(
+        /databases/$(database)/documents/account_deletions/$(userId)
+      );
+    }
+
     function canWrite(userId) {
-      return isOwner(userId)
-          && !exists(
-            /databases/$(database)/documents/account_deletions/$(userId)
-          );
+      return isOwner(userId) && !isDeleting(userId);
     }
 
     function recentlyAuthenticated() {
-      return request.auth.token.auth_time is int
+      return request.auth != null
+          && request.auth.token.auth_time is int
           && request.time.toMillis()
               - request.auth.token.auth_time * 1000 >= 0
           && request.time.toMillis()
               - request.auth.token.auth_time * 1000 < 300000;
+    }
+
+    function isValidReading() {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+            'valueMgDl',
+            'type',
+            'measuredAt',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'valueMgDl',
+            'type',
+            'measuredAt',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.valueMgDl is int
+          && data.valueMgDl > 0
+          && data.type in ['fasting', 'postMeal']
+          && data.measuredAt is timestamp
+          && data.note is string
+          && data.note.size() <= 1000
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+    }
+
+    function isValidHba1cResult() {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+            'valuePercent',
+            'testDate',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'valuePercent',
+            'testDate',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.valuePercent is number
+          && data.valuePercent > 0
+          && data.valuePercent <= 100
+          && data.testDate is timestamp
+          && data.note is string
+          && data.note.size() <= 1000
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+    }
+
+    function isValidInsulinEntry() {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+            'insulinName',
+            'kind',
+            'doseUnits',
+            'administeredAt',
+            'note',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'insulinName',
+            'kind',
+            'doseUnits',
+            'administeredAt',
+            'note',
+            'createdAt',
+            'updatedAt',
+            'occurrenceId'
+          ])
+          && data.insulinName is string
+          && data.insulinName.size() > 0
+          && data.insulinName.size() <= 100
+          && data.kind in ['bolus', 'basal', 'other']
+          && data.doseUnits is number
+          && data.doseUnits > 0
+          && data.administeredAt is timestamp
+          && data.administeredAt <= request.time
+          && data.note is string
+          && data.note.size() <= 1000
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp
+          && (
+            !('occurrenceId' in data)
+            || (
+              data.occurrenceId is string
+              && data.occurrenceId.size() > 0
+              && data.occurrenceId.size() <= 500
+              && !data.occurrenceId.matches('.*[/].*')
+            )
+          );
+    }
+
+    function validInsulinLink(userId, entryId) {
+      let data = request.resource.data;
+      let occurrenceId = data.get('occurrenceId', '');
+
+      return !('occurrenceId' in data)
+          || (
+            entryId == 'planned_' + occurrenceId
+            && getAfter(
+              /databases/$(database)/documents/users/$(userId)/insulin_occurrences/$(occurrenceId)
+            ).data.status == 'completed'
+            && getAfter(
+              /databases/$(database)/documents/users/$(userId)/insulin_occurrences/$(occurrenceId)
+            ).data.insulinEntryId == entryId
+          );
+    }
+
+    function canDeleteInsulinEntry(userId) {
+      let occurrenceId = resource.data.get('occurrenceId', '');
+
+      return isDeleting(userId)
+          || !('occurrenceId' in resource.data)
+          || !existsAfter(
+            /databases/$(database)/documents/users/$(userId)/insulin_occurrences/$(occurrenceId)
+          );
+    }
+
+    function isValidInsulinOccurrence(occurrenceId) {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+            'reminderId',
+            'dateKey',
+            'weekday',
+            'hour',
+            'minute',
+            'scheduledAt',
+            'status',
+            'insulinEntryId',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'reminderId',
+            'dateKey',
+            'weekday',
+            'hour',
+            'minute',
+            'scheduledAt',
+            'status',
+            'insulinEntryId',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.reminderId is string
+          && data.reminderId.size() > 0
+          && data.reminderId.size() <= 200
+          && !data.reminderId.matches('.*[/].*')
+          && data.dateKey is string
+          && data.dateKey.matches('^[0-9]{8}$')
+          && data.weekday is int
+          && data.weekday >= 1
+          && data.weekday <= 7
+          && data.hour is int
+          && data.hour >= 0
+          && data.hour <= 23
+          && data.minute is int
+          && data.minute >= 0
+          && data.minute <= 59
+          && occurrenceId == data.reminderId
+              + '_' + data.dateKey
+              + '_' + string(data.hour)
+              + '_' + string(data.minute)
+          && data.scheduledAt is timestamp
+          && data.scheduledAt <= request.time
+          && data.status in ['completed', 'skipped']
+          && (
+            (
+              data.status == 'completed'
+              && data.insulinEntryId is string
+              && data.insulinEntryId == 'planned_' + occurrenceId
+            )
+            || (
+              data.status == 'skipped'
+              && data.insulinEntryId == null
+            )
+          )
+          && data.createdAt == request.time
+          && data.updatedAt == request.time;
+    }
+
+    function matchesCurrentInsulinReminder(userId) {
+      let data = request.resource.data;
+      let reminder = get(
+        /databases/$(database)/documents/users/$(userId)/reminders/$(data.reminderId)
+      ).data;
+
+      return reminder.type == 'insulin'
+          && reminder.isEnabled == true
+          && reminder.hour == data.hour
+          && reminder.minute == data.minute
+          && data.weekday in reminder.weekdays
+          && reminder.createdAt <= data.scheduledAt
+          && reminder.updatedAt <= data.scheduledAt;
+    }
+
+    function validOccurrenceEntry(userId, occurrenceId) {
+      let data = request.resource.data;
+      let entryId = 'planned_' + occurrenceId;
+
+      return (
+            data.status == 'skipped'
+            && !existsAfter(
+              /databases/$(database)/documents/users/$(userId)/insulin_entries/$(entryId)
+            )
+          )
+          || (
+            data.status == 'completed'
+            && getAfter(
+              /databases/$(database)/documents/users/$(userId)/insulin_entries/$(entryId)
+            ).data.occurrenceId == occurrenceId
+          );
+    }
+
+    function canDeleteOccurrence(userId) {
+      let data = resource.data;
+
+      return isDeleting(userId)
+          || data.status == 'skipped'
+          || (
+            data.insulinEntryId is string
+            && !existsAfter(
+              /databases/$(database)/documents/users/$(userId)/insulin_entries/$(data.insulinEntryId)
+            )
+          );
+    }
+
+    function isValidReminder() {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+            'type',
+            'hour',
+            'minute',
+            'weekdays',
+            'note',
+            'isEnabled',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'type',
+            'hour',
+            'minute',
+            'weekdays',
+            'note',
+            'isEnabled',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.type in ['fasting', 'postMeal', 'insulin']
+          && data.hour is int
+          && data.hour >= 0
+          && data.hour <= 23
+          && data.minute is int
+          && data.minute >= 0
+          && data.minute <= 59
+          && data.weekdays is list
+          && data.weekdays.size() >= 1
+          && data.weekdays.size() <= 7
+          && data.weekdays.hasOnly([1, 2, 3, 4, 5, 6, 7])
+          && data.weekdays.toSet().size() == data.weekdays.size()
+          && data.note is string
+          && data.note.size() <= 200
+          && data.isEnabled is bool
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
     }
 
     match /account_deletions/{userId} {
@@ -40,103 +323,6 @@ service cloud.firestore {
           && request.resource.data.requestedAt == request.time;
 
       allow list, update, delete: if false;
-    }
-
-    function isValidReading() {
-      let data = request.resource.data;
-
-      return data.keys().hasAll([
-            'valueMgDl', 'type', 'measuredAt', 'note',
-            'createdAt', 'updatedAt'
-          ])
-          && data.keys().hasOnly([
-            'valueMgDl', 'type', 'measuredAt', 'note',
-            'createdAt', 'updatedAt'
-          ])
-          && data.valueMgDl is int
-          && data.valueMgDl > 0
-          && data.type in ['fasting', 'postMeal']
-          && data.measuredAt is timestamp
-          && data.note is string
-          && data.note.size() <= 1000
-          && data.createdAt is timestamp
-          && data.updatedAt is timestamp;
-    }
-
-    function isValidHba1cResult() {
-      let data = request.resource.data;
-
-      return data.keys().hasAll([
-            'valuePercent', 'testDate', 'note',
-            'createdAt', 'updatedAt'
-          ])
-          && data.keys().hasOnly([
-            'valuePercent', 'testDate', 'note',
-            'createdAt', 'updatedAt'
-          ])
-          && data.valuePercent is number
-          && data.valuePercent > 0
-          && data.valuePercent <= 100
-          && data.testDate is timestamp
-          && data.note is string
-          && data.note.size() <= 1000
-          && data.createdAt is timestamp
-          && data.updatedAt is timestamp;
-    }
-
-    function isValidInsulinEntry() {
-      let data = request.resource.data;
-
-      return data.keys().hasAll([
-            'insulinName', 'kind', 'doseUnits', 'administeredAt',
-            'note', 'createdAt', 'updatedAt'
-          ])
-          && data.keys().hasOnly([
-            'insulinName', 'kind', 'doseUnits', 'administeredAt',
-            'note', 'createdAt', 'updatedAt'
-          ])
-          && data.insulinName is string
-          && data.insulinName.size() > 0
-          && data.insulinName.size() <= 100
-          && data.kind in ['bolus', 'basal', 'other']
-          && data.doseUnits is number
-          && data.doseUnits > 0
-          && data.administeredAt is timestamp
-          && data.administeredAt <= request.time
-          && data.note is string
-          && data.note.size() <= 1000
-          && data.createdAt is timestamp
-          && data.updatedAt is timestamp;
-    }
-
-    function isValidReminder() {
-      let data = request.resource.data;
-
-      return data.keys().hasAll([
-            'type', 'hour', 'minute', 'weekdays', 'note',
-            'isEnabled', 'createdAt', 'updatedAt'
-          ])
-          && data.keys().hasOnly([
-            'type', 'hour', 'minute', 'weekdays', 'note',
-            'isEnabled', 'createdAt', 'updatedAt'
-          ])
-          && data.type in ['fasting', 'postMeal', 'insulin']
-          && data.hour is int
-          && data.hour >= 0
-          && data.hour <= 23
-          && data.minute is int
-          && data.minute >= 0
-          && data.minute <= 59
-          && data.weekdays is list
-          && data.weekdays.size() >= 1
-          && data.weekdays.size() <= 7
-          && data.weekdays.hasOnly([1, 2, 3, 4, 5, 6, 7])
-          && data.weekdays.toSet().size() == data.weekdays.size()
-          && data.note is string
-          && data.note.size() <= 200
-          && data.isEnabled is bool
-          && data.createdAt is timestamp
-          && data.updatedAt is timestamp;
     }
 
     match /users/{userId}/glucose_readings/{readingId} {
@@ -168,17 +354,38 @@ service cloud.firestore {
     }
 
     match /users/{userId}/insulin_entries/{entryId} {
-      allow read, delete: if isOwner(userId);
+      allow read: if isOwner(userId);
 
       allow create: if canWrite(userId)
           && isValidInsulinEntry()
+          && validInsulinLink(userId, entryId)
           && request.resource.data.createdAt == request.time
           && request.resource.data.updatedAt == request.time;
 
       allow update: if canWrite(userId)
           && isValidInsulinEntry()
+          && validInsulinLink(userId, entryId)
+          && request.resource.data.get('occurrenceId', null)
+              == resource.data.get('occurrenceId', null)
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.updatedAt == request.time;
+
+      allow delete: if isOwner(userId)
+          && canDeleteInsulinEntry(userId);
+    }
+
+    match /users/{userId}/insulin_occurrences/{occurrenceId} {
+      allow read: if isOwner(userId);
+
+      allow create: if canWrite(userId)
+          && isValidInsulinOccurrence(occurrenceId)
+          && matchesCurrentInsulinReminder(userId)
+          && validOccurrenceEntry(userId, occurrenceId);
+
+      allow update: if false;
+
+      allow delete: if isOwner(userId)
+          && canDeleteOccurrence(userId);
     }
 
     match /users/{userId}/reminders/{reminderId} {
