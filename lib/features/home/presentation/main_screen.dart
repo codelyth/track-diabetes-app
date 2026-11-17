@@ -13,6 +13,7 @@ import '../../hba1c/presentation/add_hba1c_screen.dart';
 import '../../insulin/presentation/add_insulin_screen.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../reminders/presentation/reminders_page.dart';
+import '../../settings/presentation/settings_page.dart';
 import '../data/home_widget_service.dart';
 import 'overview_page.dart';
 import 'records_page.dart';
@@ -315,7 +316,11 @@ class _MainScreenState extends State<MainScreen> {
               key: ValueKey('reminders-${user.uid}'),
               userId: user.uid,
             ),
-            _SettingsPage(isSigningOut: _isSigningOut, onSignOut: _signOut),
+            SettingsPage(
+              key: ValueKey('settings-${user.uid}'),
+              isSigningOut: _isSigningOut,
+              onSignOut: _signOut,
+            ),
           ],
         ),
       ),
@@ -359,67 +364,6 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SettingsPage extends StatelessWidget {
-  const _SettingsPage({required this.isSigningOut, required this.onSignOut});
-
-  final bool isSigningOut;
-  final VoidCallback onSignOut;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.settings_outlined, color: AppColors.primary),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Uygulama ayarları',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Tercihleriniz',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.text,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Profil, bildirim ve widget ayarlarını '
-                'burada tamamlayacağız.',
-                style: TextStyle(color: AppColors.muted, height: 1.5),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        FilledButton.icon(
-          onPressed: isSigningOut ? null : onSignOut,
-          icon: const Icon(Icons.logout),
-          label: Text(isSigningOut ? 'Çıkış yapılıyor...' : 'Çıkış yap'),
-        ),
-      ],
     );
   }
 }
