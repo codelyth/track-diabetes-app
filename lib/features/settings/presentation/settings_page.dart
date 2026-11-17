@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/presentation/delete_account_screen.dart';
 import 'update_account_screen.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -355,9 +356,31 @@ class _SettingsPageState extends State<SettingsPage>
                 widget.isSigningOut ? 'Çıkış yapılıyor…' : 'Çıkış yap',
               ),
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: _busy ? null : _openDeleteAccount,
+              icon: const Icon(Icons.delete_forever_outlined),
+              label: const Text('Hesabımı sil'),
+            ),
           ],
         );
       },
+    );
+  }
+
+  Future<void> _openDeleteAccount() async {
+    if (_busy) return;
+
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => DeleteAccountScreen(userId: userId),
+      ),
     );
   }
 }

@@ -2,80 +2,56 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isValidInsulinEntry() {
-      let data = request.resource.data;
-
-      return data.keys().hasAll([
-            'insulinName',
-            'kind',
-            'doseUnits',
-            'administeredAt',
-            'note',
-            'createdAt',
-            'updatedAt'
-          ])
-          && data.keys().hasOnly([
-            'insulinName',
-            'kind',
-            'doseUnits',
-            'administeredAt',
-            'note',
-            'createdAt',
-            'updatedAt'
-          ])
-          && data.insulinName is string
-          && data.insulinName.size() > 0
-          && data.insulinName.size() <= 100
-          && data.kind in ['bolus', 'basal', 'other']
-          && data.doseUnits is number
-          && data.doseUnits > 0
-          && data.administeredAt is timestamp
-          && data.administeredAt <= request.time
-          && data.note is string
-          && data.note.size() <= 1000
-          && data.createdAt is timestamp
-          && data.updatedAt is timestamp;
-    }
-
-    match /users/{userId}/insulin_entries/{entryId} {
-      allow read: if isOwner(userId);
-
-      allow create: if isOwner(userId)
-          && isValidInsulinEntry()
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.updatedAt == request.time;
-
-      allow update: if isOwner(userId)
-          && isValidInsulinEntry()
-          && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.updatedAt == request.time;
-
-      allow delete: if isOwner(userId);
-    }
-
     function isOwner(userId) {
       return request.auth != null
           && request.auth.uid == userId;
+    }
+
+    function canWrite(userId) {
+      return isOwner(userId)
+          && !exists(
+            /databases/$(database)/documents/account_deletions/$(userId)
+          );
+    }
+
+    function recentlyAuthenticated() {
+      return request.auth.token.auth_time is int
+          && request.time.toMillis()
+              - request.auth.token.auth_time * 1000 >= 0
+          && request.time.toMillis()
+              - request.auth.token.auth_time * 1000 < 300000;
+    }
+
+    match /account_deletions/{userId} {
+      allow get: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+          && recentlyAuthenticated()
+          && request.resource.data.keys().hasAll([
+            'version',
+            'requestedAt'
+          ])
+          && request.resource.data.keys().hasOnly([
+            'version',
+            'requestedAt'
+          ])
+          && request.resource.data.version is int
+          && request.resource.data.version == 1
+          && request.resource.data.requestedAt == request.time;
+
+      allow list, update, delete: if false;
     }
 
     function isValidReading() {
       let data = request.resource.data;
 
       return data.keys().hasAll([
-            'valueMgDl',
-            'type',
-            'measuredAt',
-            'note',
-            'createdAt',
-            'updatedAt'
+            'valueMgDl', 'type', 'measuredAt', 'note',
+            'createdAt', 'updatedAt'
           ])
           && data.keys().hasOnly([
-            'valueMgDl',
-            'type',
-            'measuredAt',
-            'note',
-            'createdAt',
-            'updatedAt'
+            'valueMgDl', 'type', 'measuredAt', 'note',
+            'createdAt', 'updatedAt'
           ])
           && data.valueMgDl is int
           && data.valueMgDl > 0
@@ -91,20 +67,14 @@ service cloud.firestore {
       let data = request.resource.data;
 
       return data.keys().hasAll([
-            'valuePercent',
-            'testDate',
-            'note',
-            'createdAt',
-            'updatedAt'
+            'valuePercent', 'testDate', 'note',
+            'createdAt', 'updatedAt'
           ])
           && data.keys().hasOnly([
-            'valuePercent',
-            'testDate',
-            'note',
-            'createdAt',
-            'updatedAt'
+            'valuePercent', 'testDate', 'note',
+            'createdAt', 'updatedAt'
           ])
-          && (data.valuePercent is int || data.valuePercent is float)
+          && data.valuePercent is number
           && data.valuePercent > 0
           && data.valuePercent <= 100
           && data.testDate is timestamp
@@ -114,60 +84,41 @@ service cloud.firestore {
           && data.updatedAt is timestamp;
     }
 
-    match /users/{userId}/glucose_readings/{readingId} {
-      allow read: if isOwner(userId);
+    function isValidInsulinEntry() {
+      let data = request.resource.data;
 
-      allow create: if isOwner(userId)
-          && isValidReading()
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.updatedAt == request.time;
-
-      allow update: if isOwner(userId)
-          && isValidReading()
-          && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.updatedAt == request.time;
-
-      allow delete: if isOwner(userId);
-    }
-
-    match /users/{userId}/hba1c_results/{resultId} {
-      allow read: if isOwner(userId);
-
-      allow create: if isOwner(userId)
-          && isValidHba1cResult()
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.updatedAt == request.time;
-
-      allow update: if isOwner(userId)
-          && isValidHba1cResult()
-          && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.updatedAt == request.time;
-
-      allow delete: if isOwner(userId);
+      return data.keys().hasAll([
+            'insulinName', 'kind', 'doseUnits', 'administeredAt',
+            'note', 'createdAt', 'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'insulinName', 'kind', 'doseUnits', 'administeredAt',
+            'note', 'createdAt', 'updatedAt'
+          ])
+          && data.insulinName is string
+          && data.insulinName.size() > 0
+          && data.insulinName.size() <= 100
+          && data.kind in ['bolus', 'basal', 'other']
+          && data.doseUnits is number
+          && data.doseUnits > 0
+          && data.administeredAt is timestamp
+          && data.administeredAt <= request.time
+          && data.note is string
+          && data.note.size() <= 1000
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
     }
 
     function isValidReminder() {
       let data = request.resource.data;
 
       return data.keys().hasAll([
-            'type',
-            'hour',
-            'minute',
-            'weekdays',
-            'note',
-            'isEnabled',
-            'createdAt',
-            'updatedAt'
+            'type', 'hour', 'minute', 'weekdays', 'note',
+            'isEnabled', 'createdAt', 'updatedAt'
           ])
           && data.keys().hasOnly([
-            'type',
-            'hour',
-            'minute',
-            'weekdays',
-            'note',
-            'isEnabled',
-            'createdAt',
-            'updatedAt'
+            'type', 'hour', 'minute', 'weekdays', 'note',
+            'isEnabled', 'createdAt', 'updatedAt'
           ])
           && data.type in ['fasting', 'postMeal', 'insulin']
           && data.hour is int
@@ -188,20 +139,60 @@ service cloud.firestore {
           && data.updatedAt is timestamp;
     }
 
-    match /users/{userId}/reminders/{reminderId} {
-      allow read: if isOwner(userId);
+    match /users/{userId}/glucose_readings/{readingId} {
+      allow read, delete: if isOwner(userId);
 
-      allow create: if isOwner(userId)
+      allow create: if canWrite(userId)
+          && isValidReading()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+      allow update: if canWrite(userId)
+          && isValidReading()
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+    }
+
+    match /users/{userId}/hba1c_results/{resultId} {
+      allow read, delete: if isOwner(userId);
+
+      allow create: if canWrite(userId)
+          && isValidHba1cResult()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+      allow update: if canWrite(userId)
+          && isValidHba1cResult()
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+    }
+
+    match /users/{userId}/insulin_entries/{entryId} {
+      allow read, delete: if isOwner(userId);
+
+      allow create: if canWrite(userId)
+          && isValidInsulinEntry()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+      allow update: if canWrite(userId)
+          && isValidInsulinEntry()
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+    }
+
+    match /users/{userId}/reminders/{reminderId} {
+      allow read, delete: if isOwner(userId);
+
+      allow create: if canWrite(userId)
           && isValidReminder()
           && request.resource.data.createdAt == request.time
           && request.resource.data.updatedAt == request.time;
 
-      allow update: if isOwner(userId)
+      allow update: if canWrite(userId)
           && isValidReminder()
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.updatedAt == request.time;
-
-      allow delete: if isOwner(userId);
     }
   }
 }
