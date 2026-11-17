@@ -225,6 +225,8 @@ class ReminderScheduler {
         rethrow;
       }
 
+      service.notifyScheduleChanges();
+
       return usedApproximateScheduling
           ? 'Hatırlatıcılar yaklaşık zamanlamayla kuruldu. '
                 'Android bildirimleri geciktirebilir.'

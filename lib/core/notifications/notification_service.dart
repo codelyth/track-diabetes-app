@@ -29,6 +29,12 @@ class NotificationService {
 
   final ValueNotifier<String?> pendingPayload = ValueNotifier<String?>(null);
 
+  final ValueNotifier<int> scheduleChanges = ValueNotifier<int>(0);
+
+  void notifyScheduleChanges() {
+    scheduleChanges.value++;
+  }
+
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
@@ -388,7 +394,7 @@ class NotificationService {
       final scheduledDate = tz.TZDateTime.now(tz.UTC).add(snoozeDuration);
 
       final payload =
-          '$reminderPayloadPrefix${jsonEncode({'userId': userId, 'reminderId': reminderId, 'type': type, 'kind': 'snooze', 'scheduleKey': currentKey})}';
+          '$reminderPayloadPrefix${jsonEncode({'userId': userId, 'reminderId': reminderId, 'type': type, 'kind': 'snooze', 'scheduleKey': currentKey, 'scheduledAtMs': scheduledDate.millisecondsSinceEpoch})}';
 
       var approximate = !exact;
 
@@ -421,6 +427,8 @@ class NotificationService {
         await _plugin.cancel(id: id);
         return;
       }
+
+      notifyScheduleChanges();
 
       debugPrint(
         '[ERTELEME] id=$id '

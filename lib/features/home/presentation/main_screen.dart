@@ -13,6 +13,7 @@ import '../../hba1c/presentation/add_hba1c_screen.dart';
 import '../../insulin/presentation/add_insulin_screen.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../reminders/presentation/reminders_page.dart';
+import '../data/home_widget_service.dart';
 import 'overview_page.dart';
 import 'records_page.dart';
 
@@ -231,6 +232,8 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _isSigningOut = true);
 
     try {
+      await HomeWidgetService.instance.suspendAndClear();
+
       await ReminderScheduler.instance.stopSession();
       _notifications.clearPendingPayload();
 
@@ -240,6 +243,12 @@ class _MainScreenState extends State<MainScreen> {
 
       if (user != null) {
         ReminderScheduler.instance.startSession(user.uid);
+
+        try {
+          await HomeWidgetService.instance.resume();
+        } catch (widgetError) {
+          debugPrint('Widget yeniden bağlanamadı: $widgetError');
+        }
       }
 
       if (!mounted) return;
