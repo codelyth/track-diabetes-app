@@ -7,6 +7,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../core/notifications/notification_occurrence.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../domain/reminder.dart';
 
@@ -34,7 +35,7 @@ class ReminderScheduler {
     _generation++;
     _userId = null;
 
-    // Uygulama arka plana geçtiğinde mevcut zamanlamalar korunur.
+    // Bu nesne ayrıldığında mevcut zamanlamalar korunur.
     // Gerçek çıkış işlemi stopSession tarafından yönetilir.
   }
 
@@ -108,7 +109,6 @@ class ReminderScheduler {
 
       final pending = await _plugin.pendingNotificationRequests();
 
-      // Test, işlem sonucu ve korunan erteleme kimliklerini ayır.
       final usedIds = <int>{...NotificationService.reservedIds};
 
       for (final notification in pending) {
@@ -126,13 +126,39 @@ class ReminderScheduler {
         }
 
         final reminder = activeById[data['reminderId']];
+        final scheduledAtMs = data['scheduledAtMs'];
+
+        final reminderScopedSnooze =
+            data['version'] == 2 &&
+            data['snoozeScope'] == 'reminder' &&
+            data['occurrence'] == null &&
+            data['type'] == 'insulin' &&
+            reminder != null &&
+            data['hour'] == reminder.hour &&
+            data['minute'] == reminder.minute &&
+            reminder.weekdays.contains(data['weekday']) &&
+            data['timeZoneId'] is String;
+
+        final validInsulinTarget =
+            reminder?.type != ReminderType.insulin ||
+            (data['version'] == 2 &&
+                reminder != null &&
+                NotificationOccurrence.read(
+                      data['occurrence'],
+                      reminderId: reminder.id,
+                    ) !=
+                    null) ||
+            reminderScopedSnooze;
 
         final preserveSnooze =
             notificationsEnabled &&
             data['kind'] == 'snooze' &&
             data['userId'] == userId &&
             reminder != null &&
-            data['scheduleKey'] == _scheduleKey(reminder);
+            data['scheduleKey'] == _scheduleKey(reminder) &&
+            scheduledAtMs is int &&
+            scheduledAtMs > DateTime.now().millisecondsSinceEpoch &&
+            validInsulinTarget;
 
         if (preserveSnooze) {
           usedIds.add(notification.id);
@@ -179,8 +205,22 @@ class ReminderScheduler {
               minute: reminder.minute,
             );
 
+            final payloadData = {
+              'version': 2,
+              'userId': userId,
+              'reminderId': reminder.id,
+              'type': reminder.type.code,
+              'kind': 'regular',
+              'scheduleKey': _scheduleKey(reminder),
+              'weekday': weekday,
+              'hour': reminder.hour,
+              'minute': reminder.minute,
+              'timeZoneId': location.name,
+            };
+
             final payload =
-                '${NotificationService.reminderPayloadPrefix}${jsonEncode({'userId': userId, 'reminderId': reminder.id, 'type': reminder.type.code, 'kind': 'regular', 'scheduleKey': _scheduleKey(reminder)})}';
+                '${NotificationService.reminderPayloadPrefix}'
+                '${jsonEncode(payloadData)}';
 
             Future<void> schedule(AndroidScheduleMode mode) async {
               await _plugin.zonedSchedule(
@@ -188,7 +228,9 @@ class ReminderScheduler {
                 title: 'Şeker Takibi',
                 body: NotificationService.reminderBody(reminder.type.code),
                 scheduledDate: scheduledDate,
-                notificationDetails: NotificationService.reminderDetails,
+                notificationDetails: NotificationService.detailsForType(
+                  reminder.type.code,
+                ),
                 androidScheduleMode: mode,
                 matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
                 payload: payload,
@@ -221,7 +263,6 @@ class ReminderScheduler {
       } catch (error, stackTrace) {
         debugPrint('Hatırlatıcı zamanlaması başarısız: $error');
         debugPrintStack(stackTrace: stackTrace);
-
         rethrow;
       }
 
@@ -240,7 +281,6 @@ class ReminderScheduler {
 
     final service = NotificationService.instance;
 
-    // Devam eden erteleme işlemleri de bu oturumu kullanamasın.
     service.setSessionUser(null);
     service.clearPendingPayload();
 

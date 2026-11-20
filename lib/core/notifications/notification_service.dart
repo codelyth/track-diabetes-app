@@ -10,6 +10,8 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'notification_occurrence.dart';
+
 class NotificationService {
   NotificationService._();
 
@@ -18,6 +20,8 @@ class NotificationService {
   static const reminderPayloadPrefix = 'diabetes-reminder:';
   static const snoozeActionId = 'snooze_10_minutes';
   static const openActionId = 'open_record';
+  static const completeInsulinActionId = 'complete_insulin';
+  static const skipInsulinActionId = 'skip_insulin';
 
   static const snoozeDuration = Duration(minutes: 10);
 
@@ -27,13 +31,13 @@ class NotificationService {
 
   static const reservedIds = {_instantTestId, _scheduledTestId, _feedbackId};
 
+  static const _actionChannel = MethodChannel(
+    'track_diabetes/notification_actions',
+  );
+
   final ValueNotifier<String?> pendingPayload = ValueNotifier<String?>(null);
 
   final ValueNotifier<int> scheduleChanges = ValueNotifier<int>(0);
-
-  void notifyScheduleChanges() {
-    scheduleChanges.value++;
-  }
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -42,10 +46,10 @@ class NotificationService {
   Future<void> _queue = Future<void>.value();
 
   bool _launchDetailsRead = false;
+  bool _sessionWasSet = false;
 
   String? _sessionUserId;
   int _sessionVersion = 0;
-  bool _sessionWasSet = false;
 
   final Set<String> _processingActions = {};
 
@@ -98,8 +102,39 @@ class NotificationService {
     ),
   );
 
-  // Erteleme sonucu aynı görünür bildirimin yerine yazılır.
-  // Bu işlem zamanlanmış haftalık alarmı iptal etmez.
+  static const insulinReminderDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'diabetes_reminders_v1',
+      'Takip hatırlatıcıları',
+      channelDescription: 'Ölçüm ve insülin takip hatırlatıcıları.',
+      icon: 'ic_notification',
+      importance: Importance.high,
+      priority: Priority.high,
+      visibility: NotificationVisibility.private,
+      autoCancel: true,
+      actions: [
+        AndroidNotificationAction(
+          completeInsulinActionId,
+          'Yapıldı',
+          showsUserInterface: true,
+          cancelNotification: false,
+        ),
+        AndroidNotificationAction(
+          skipInsulinActionId,
+          'Atlandı',
+          showsUserInterface: true,
+          cancelNotification: false,
+        ),
+        AndroidNotificationAction(
+          snoozeActionId,
+          '10 dk ertele',
+          showsUserInterface: true,
+          cancelNotification: false,
+        ),
+      ],
+    ),
+  );
+
   static const _feedbackDetails = NotificationDetails(
     android: AndroidNotificationDetails(
       'notification_status_v1',
@@ -114,6 +149,10 @@ class NotificationService {
       autoCancel: true,
     ),
   );
+
+  static NotificationDetails detailsForType(String type) {
+    return type == 'insulin' ? insulinReminderDetails : reminderDetails;
+  }
 
   bool get isSupported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -131,6 +170,10 @@ class NotificationService {
     return implementation;
   }
 
+  void notifyScheduleChanges() {
+    scheduleChanges.value++;
+  }
+
   void setSessionUser(String? userId) {
     _sessionWasSet = true;
 
@@ -140,7 +183,6 @@ class NotificationService {
     }
   }
 
-  /// Zamanlama, erteleme ve iptal işlemleri aynı sırayı kullanır.
   Future<T> runExclusive<T>(Future<T> Function() operation) {
     final result = _queue.then((_) => operation());
 
@@ -179,7 +221,7 @@ class NotificationService {
         android: AndroidInitializationSettings('ic_notification'),
       ),
       onDidReceiveNotificationResponse: (response) {
-        unawaited(_handleResponse(response));
+        unawaited(_dispatchResponse(response));
       },
     );
 
@@ -198,25 +240,69 @@ class NotificationService {
       final response = details?.notificationResponse;
 
       if (details?.didNotificationLaunchApp == true && response != null) {
-        // initialize tamamlanmadan kendisini beklememesi için await etmiyoruz.
-        unawaited(_handleResponse(response));
+        // Başlatma işleminin kendisini beklemesini önler.
+        unawaited(_dispatchResponse(response));
       }
+    }
+  }
+
+  Future<void> _dispatchResponse(NotificationResponse response) async {
+    if (parseReminderPayload(response.payload) == null) return;
+
+    try {
+      final claimed = await _actionChannel.invokeMethod<bool>(
+        'consumeNotificationAction',
+        {
+          'notificationId': response.id,
+          'payload': response.payload,
+          'actionId': response.actionId ?? '',
+        },
+      );
+
+      if (claimed != true) {
+        debugPrint(
+          '[BİLDİRİM] Başlangıç işlemi zaten tüketilmiş '
+          'veya güncel bildirimle eşleşmiyor. Tekrar çalıştırılmadı.',
+        );
+
+        return;
+      }
+
+      await _handleResponse(response);
+    } catch (error, stackTrace) {
+      debugPrint('Bildirim işlemi başlatılamadı: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
+      await _showFeedback(
+        title: 'Bildirim işlemi tamamlanamadı',
+        body:
+            'Uygulamayı tamamen kapatıp yeniden açın. '
+            'Ardından bildirimdeki düğmeden tekrar deneyin.',
+      );
     }
   }
 
   Future<void> _handleResponse(NotificationResponse response) async {
     final payload = response.payload;
+    final data = parseReminderPayload(payload);
 
-    if (parseReminderPayload(payload) == null) return;
+    if (data == null) return;
 
-    if (response.actionId == snoozeActionId) {
+    final actionId = response.actionId;
+
+    // Erteleme doğrudan çalışır; tarih seçimi açılmaz.
+    if (actionId == snoozeActionId) {
       final actionKey = '${response.id}:$payload';
 
       if (!_processingActions.add(actionKey)) return;
 
       try {
-        await initialize();
-        await _snooze(response);
+        if (data['type'] == 'insulin') {
+          await snoozeInsulin(data: {...data, 'notificationId': response.id});
+        } else {
+          await initialize();
+          await _snooze(response);
+        }
       } catch (error, stackTrace) {
         debugPrint('Erteleme başarısız: $error');
         debugPrintStack(stackTrace: stackTrace);
@@ -234,7 +320,26 @@ class NotificationService {
       return;
     }
 
-    final actionId = response.actionId;
+    if (data['type'] == 'insulin') {
+      final String action;
+
+      if (actionId == completeInsulinActionId) {
+        action = 'complete';
+      } else if (actionId == skipInsulinActionId) {
+        action = 'skip';
+      } else if (actionId == null ||
+          actionId.isEmpty ||
+          actionId == openActionId) {
+        action = 'open';
+      } else {
+        return;
+      }
+
+      pendingPayload.value =
+          '$reminderPayloadPrefix${jsonEncode({...data, 'action': action, 'notificationId': response.id})}';
+
+      return;
+    }
 
     if (actionId == null || actionId.isEmpty || actionId == openActionId) {
       pendingPayload.value = payload;
@@ -291,6 +396,182 @@ class NotificationService {
     };
   }
 
+  Future<DateTime> snoozeInsulin({required Map<String, dynamic> data}) async {
+    try {
+      await initialize();
+
+      final userId = data['userId'];
+      final reminderId = data['reminderId'];
+
+      if (data['type'] != 'insulin' ||
+          userId is! String ||
+          reminderId is! String) {
+        throw StateError('İnsülin bildirimi doğrulanamadı.');
+      }
+
+      final occurrence = NotificationOccurrence.read(
+        data['occurrence'],
+        reminderId: reminderId,
+      );
+
+      if (data['occurrence'] != null && occurrence == null) {
+        throw StateError('İnsülin planının bilgileri doğrulanamadı.');
+      }
+
+      final sessionVersion = _sessionVersion;
+
+      bool isCurrentSession() {
+        return sessionVersion == _sessionVersion &&
+            _sessionUserId == userId &&
+            FirebaseAuth.instance.currentUser?.uid == userId;
+      }
+
+      if (!isCurrentSession()) {
+        throw StateError('Oturum değişti. Erteleme yapılmadı.');
+      }
+
+      final notificationId = data['notificationId'];
+
+      debugPrint('[İNSÜLİN ERTELEME] İşlem başladı.');
+
+      await _snooze(
+        NotificationResponse(
+          notificationResponseType:
+              NotificationResponseType.selectedNotificationAction,
+          id: notificationId is int ? notificationId : null,
+          actionId: snoozeActionId,
+          payload: '$reminderPayloadPrefix${jsonEncode(data)}',
+        ),
+      );
+
+      if (!isCurrentSession()) {
+        throw StateError('Oturum değişti. Erteleme doğrulanamadı.');
+      }
+
+      final pending = await _plugin.pendingNotificationRequests();
+
+      if (!isCurrentSession()) {
+        throw StateError('Oturum değişti. Erteleme doğrulanamadı.');
+      }
+
+      for (final item in pending) {
+        final saved = parseReminderPayload(item.payload);
+
+        if (saved == null ||
+            saved['kind'] != 'snooze' ||
+            saved['type'] != 'insulin' ||
+            saved['userId'] != userId ||
+            saved['reminderId'] != reminderId ||
+            saved['scheduleKey'] != data['scheduleKey']) {
+          continue;
+        }
+
+        final savedOccurrence = NotificationOccurrence.read(
+          saved['occurrence'],
+          reminderId: reminderId,
+        );
+
+        if (occurrence != null) {
+          if (savedOccurrence?.id != occurrence.id) continue;
+        } else {
+          if (saved['snoozeScope'] != 'reminder' ||
+              saved['occurrence'] != null) {
+            continue;
+          }
+        }
+
+        final scheduledAtMs = saved['scheduledAtMs'];
+
+        if (scheduledAtMs is! int) continue;
+
+        final scheduledAt = DateTime.fromMillisecondsSinceEpoch(scheduledAtMs);
+
+        if (!scheduledAt.isAfter(DateTime.now())) continue;
+
+        debugPrint(
+          '[İNSÜLİN ERTELEME] '
+          'cihazdaKayitli=true '
+          'id=${item.id} '
+          'planlanan=$scheduledAt',
+        );
+
+        return scheduledAt;
+      }
+
+      throw StateError(
+        'Ertelemenin cihazda kayıtlı olduğu doğrulanamadı. '
+        'Hatırlatıcılar bölümünü yenileyip tekrar kontrol edin.',
+      );
+    } catch (error, stackTrace) {
+      debugPrint('[İNSÜLİN ERTELEME] Başarısız: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<void> acknowledgeInsulinOccurrence({
+    required String userId,
+    required String occurrenceId,
+    required bool skipped,
+    int? notificationId,
+  }) async {
+    await initialize();
+
+    final version = _sessionVersion;
+
+    bool isCurrentSession() {
+      return version == _sessionVersion &&
+          _sessionUserId == userId &&
+          FirebaseAuth.instance.currentUser?.uid == userId;
+    }
+
+    await runExclusive(() async {
+      if (!isCurrentSession()) return;
+
+      final pending = await _plugin.pendingNotificationRequests();
+
+      for (final item in pending) {
+        if (!isCurrentSession()) return;
+
+        final data = parseReminderPayload(item.payload);
+
+        if (data == null ||
+            data['kind'] != 'snooze' ||
+            data['type'] != 'insulin' ||
+            data['userId'] != userId) {
+          continue;
+        }
+
+        final target = NotificationOccurrence.read(
+          data['occurrence'],
+          reminderId: data['reminderId'] as String,
+        );
+
+        final isOpenedReminderSnooze =
+            data['snoozeScope'] == 'reminder' &&
+            data['occurrence'] == null &&
+            item.id == notificationId;
+
+        if (target?.id == occurrenceId || isOpenedReminderSnooze) {
+          await _plugin.cancel(id: item.id);
+        }
+      }
+
+      if (!isCurrentSession()) return;
+
+      notifyScheduleChanges();
+
+      // Haftalık tekrarın kimliği doğrudan iptal edilmez.
+      await _showFeedback(
+        id: notificationId,
+        title: 'İnsülin takibi güncellendi',
+        body: skipped
+            ? 'Seçilen plan atlandı olarak işaretlendi.'
+            : 'Uygulama kaydedildi ve seçilen plan tamamlandı.',
+      );
+    });
+  }
+
   Future<void> _snooze(NotificationResponse response) {
     final user = FirebaseAuth.instance.currentUser;
     final data = parseReminderPayload(response.payload);
@@ -314,6 +595,20 @@ class NotificationService {
       }
 
       final reminderId = data['reminderId'] as String;
+
+      final deletion = await FirebaseFirestore.instance
+          .collection('account_deletions')
+          .doc(userId)
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 10));
+
+      if (!isCurrentSession()) {
+        throw StateError('Oturum değişti. Erteleme yapılmadı.');
+      }
+
+      if (deletion.exists) {
+        throw StateError('Bu hesap için silme işlemi başlatılmış.');
+      }
 
       final document = await FirebaseFirestore.instance
           .collection('users')
@@ -349,9 +644,84 @@ class NotificationService {
 
       if (originalKey != null && originalKey != currentKey) {
         throw StateError(
-          'Hatırlatıcı değiştirilmiş. Güncel kaydı Hatırlatıcılar '
-          'bölümünden kontrol edin.',
+          'Hatırlatıcı değiştirilmiş. Güncel kaydı '
+          'Hatırlatıcılar bölümünden kontrol edin.',
         );
+      }
+
+      NotificationOccurrence? occurrence;
+
+      if (type == 'insulin') {
+        if (data['version'] != 2 ||
+            data['type'] != 'insulin' ||
+            originalKey != currentKey) {
+          throw StateError(
+            'İnsülin bildirimi güncel hatırlatıcıyla eşleşmiyor.',
+          );
+        }
+
+        final encodedOccurrence = data['occurrence'];
+
+        if (encodedOccurrence == null) {
+          final validSource =
+              data['kind'] == 'regular' ||
+              (data['kind'] == 'snooze' && data['snoozeScope'] == 'reminder');
+
+          final weekdays = List<int>.from(reminder['weekdays'] as List);
+          final timeZoneId = data['timeZoneId'];
+
+          if (!validSource ||
+              data['hour'] != reminder['hour'] ||
+              data['minute'] != reminder['minute'] ||
+              !weekdays.contains(data['weekday']) ||
+              timeZoneId is! String) {
+            throw StateError('İnsülin bildiriminin bilgileri doğrulanamadı.');
+          }
+
+          NotificationOccurrence.locationFor(timeZoneId);
+        } else {
+          occurrence = NotificationOccurrence.read(
+            encodedOccurrence,
+            reminderId: reminderId,
+          );
+
+          if (occurrence == null) {
+            throw StateError('İnsülin planının bilgileri doğrulanamadı.');
+          }
+
+          final weekdays = List<int>.from(reminder['weekdays'] as List);
+          final createdAt = reminder['createdAt'];
+          final updatedAt = reminder['updatedAt'];
+
+          if (occurrence.hour != reminder['hour'] ||
+              occurrence.minute != reminder['minute'] ||
+              !weekdays.contains(occurrence.weekday) ||
+              occurrence.scheduledAt.isAfter(DateTime.now()) ||
+              createdAt is! Timestamp ||
+              updatedAt is! Timestamp ||
+              createdAt.toDate().isAfter(occurrence.scheduledAt) ||
+              updatedAt.toDate().isAfter(occurrence.scheduledAt)) {
+            throw StateError(
+              'Bu plan artık geçerli değil. Güncel takibi kontrol edin.',
+            );
+          }
+
+          final saved = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .collection('insulin_occurrences')
+              .doc(occurrence.id)
+              .get(const GetOptions(source: Source.server))
+              .timeout(const Duration(seconds: 10));
+
+          if (saved.exists) {
+            throw StateError('Bu plan zaten işaretlenmiş. Tekrar ertelenmedi.');
+          }
+        }
+      }
+
+      if (!isCurrentSession()) {
+        throw StateError('Oturum değişti. Erteleme yapılmadı.');
       }
 
       if (!await notificationsEnabled()) {
@@ -365,19 +735,79 @@ class NotificationService {
       for (final item in pending) {
         final itemData = parseReminderPayload(item.payload);
 
-        if (itemData?['kind'] == 'snooze' &&
-            itemData?['userId'] == userId &&
-            itemData?['reminderId'] == reminderId) {
-          existingId = item.id;
-          break;
+        if (itemData?['kind'] != 'snooze' ||
+            itemData?['userId'] != userId ||
+            itemData?['reminderId'] != reminderId) {
+          continue;
+        }
+
+        if (occurrence != null) {
+          final existingOccurrence = NotificationOccurrence.read(
+            itemData?['occurrence'],
+            reminderId: reminderId,
+          );
+
+          if (existingOccurrence?.id != occurrence.id) continue;
+        } else if (type == 'insulin') {
+          if (itemData?['occurrence'] != null ||
+              itemData?['snoozeScope'] != 'reminder') {
+            continue;
+          }
+        }
+
+        existingId = item.id;
+        break;
+      }
+
+      // Bekleyen insülin ertelemesinin saati tekrar ileri taşınmaz.
+      if (type == 'insulin' && existingId != null) {
+        final existing = pending.firstWhere((item) => item.id == existingId);
+
+        final existingData = parseReminderPayload(existing.payload);
+        final existingTimeMs = existingData?['scheduledAtMs'];
+
+        if (existingData?['type'] == 'insulin' &&
+            existingData?['scheduleKey'] == currentKey &&
+            existingTimeMs is int &&
+            existingTimeMs > DateTime.now().millisecondsSinceEpoch) {
+          if (!isCurrentSession()) {
+            throw StateError('Oturum değişti. Erteleme doğrulanamadı.');
+          }
+
+          final existingDate = DateTime.fromMillisecondsSinceEpoch(
+            existingTimeMs,
+          );
+
+          final hour = existingDate.hour.toString().padLeft(2, '0');
+          final minute = existingDate.minute.toString().padLeft(2, '0');
+
+          debugPrint(
+            '[ERTELEME KORUNDU] '
+            'id=$existingId '
+            'planlanan=$existingDate '
+            'yenidenZamanlandi=false',
+          );
+
+          notifyScheduleChanges();
+
+          await _showFeedback(
+            id: response.id,
+            title: 'Hatırlatıcı zaten ertelendi',
+            body:
+                'Mevcut bildirim saati: $hour:$minute. '
+                'Erteleme saati değiştirilmedi.',
+          );
+
+          return;
         }
       }
 
       final usedIds = pending.map((item) => item.id).toSet()
         ..addAll(reservedIds);
 
-      var id =
-          existingId ?? (1000000000 + stableHash('$userId/$reminderId/snooze'));
+      final scope = occurrence?.id ?? reminderId;
+
+      var id = existingId ?? (1000000000 + stableHash('$userId/$scope/snooze'));
 
       if (existingId == null) {
         while (usedIds.contains(id)) {
@@ -393,8 +823,29 @@ class NotificationService {
 
       final scheduledDate = tz.TZDateTime.now(tz.UTC).add(snoozeDuration);
 
-      final payload =
-          '$reminderPayloadPrefix${jsonEncode({'userId': userId, 'reminderId': reminderId, 'type': type, 'kind': 'snooze', 'scheduleKey': currentKey, 'scheduledAtMs': scheduledDate.millisecondsSinceEpoch})}';
+      final payloadData = <String, dynamic>{
+        ...data,
+        'version': 2,
+        'userId': userId,
+        'reminderId': reminderId,
+        'type': type,
+        'kind': 'snooze',
+        'scheduleKey': currentKey,
+        'scheduledAtMs': scheduledDate.millisecondsSinceEpoch,
+      };
+
+      payloadData.remove('action');
+      payloadData.remove('notificationId');
+
+      if (occurrence != null) {
+        payloadData['occurrence'] = occurrence.toMap();
+        payloadData.remove('snoozeScope');
+      } else if (type == 'insulin') {
+        payloadData.remove('occurrence');
+        payloadData['snoozeScope'] = 'reminder';
+      }
+
+      final payload = '$reminderPayloadPrefix${jsonEncode(payloadData)}';
 
       var approximate = !exact;
 
@@ -404,7 +855,7 @@ class NotificationService {
           title: 'Şeker Takibi',
           body: reminderBody(type),
           scheduledDate: scheduledDate,
-          notificationDetails: reminderDetails,
+          notificationDetails: detailsForType(type),
           androidScheduleMode: mode,
           payload: payload,
         );
@@ -420,12 +871,13 @@ class NotificationService {
         if (error.code != 'exact_alarms_not_permitted') rethrow;
 
         approximate = true;
+
         await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
       }
 
       if (!isCurrentSession()) {
         await _plugin.cancel(id: id);
-        return;
+        throw StateError('Oturum değişti. Erteleme iptal edildi.');
       }
 
       notifyScheduleChanges();
@@ -433,6 +885,7 @@ class NotificationService {
       debugPrint(
         '[ERTELEME] id=$id '
         'planlanan=$scheduledDate '
+        'plan=${occurrence?.id} '
         'yaklasik=$approximate',
       );
 
@@ -440,15 +893,13 @@ class NotificationService {
       final hour = localDate.hour.toString().padLeft(2, '0');
       final minute = localDate.minute.toString().padLeft(2, '0');
 
-      // cancel(id: response.id) kullanmıyoruz:
-      // asıl haftalık zamanlamayı da iptal edebilir.
       await _showFeedback(
         id: response.id,
         title: 'Hatırlatıcı ertelendi',
         body: approximate
             ? 'Yaklaşık 10 dakika sonrasına planlandı. '
                   'Android bildirimi geciktirebilir.'
-            : 'Sonraki bildirim: $hour:$minute · 24 saat. '
+            : 'Sonraki bildirim: $hour:$minute. '
                   'Normal tekrar saatiniz değişmedi.',
       );
     });

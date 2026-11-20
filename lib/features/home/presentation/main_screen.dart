@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,6 +13,7 @@ import '../../insulin/presentation/add_insulin_screen.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../reminders/presentation/reminders_page.dart';
 import '../../settings/presentation/settings_page.dart';
+import '../../reminders/presentation/insulin_notification_screen.dart';
 import '../data/home_widget_service.dart';
 import 'overview_page.dart';
 import 'records_page.dart';
@@ -82,36 +82,40 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
     _isOpeningNotification = true;
 
     try {
       final payload = _notifications.takePendingPayload();
+      final decoded = NotificationService.parseReminderPayload(payload);
 
-      if (payload == null) return;
+      if (decoded == null) return;
 
-      const prefix = NotificationService.reminderPayloadPrefix;
-
-      if (!payload.startsWith(prefix)) return;
-
-      final decoded = jsonDecode(payload.substring(prefix.length));
-
-      if (decoded is! Map<String, dynamic>) return;
-
-      final payloadUserId = decoded['userId'];
-      final reminderId = decoded['reminderId'];
-
-      if (payloadUserId is! String ||
-          reminderId is! String ||
-          reminderId.isEmpty ||
-          reminderId.contains('/')) {
+      if (decoded['userId'] != user.uid) {
+        _showMessage('Bu bildirim mevcut hesaba ait değil.');
         return;
       }
 
-      if (payloadUserId != user.uid) {
-        _showMessage('Bu bildirim mevcut hesaba ait değil.');
+      final reminderId = decoded['reminderId'] as String;
+
+      if (decoded['type'] == 'insulin') {
+        _openRecords(RecordTab.insulin);
+
+        final completed = await Navigator.of(context).push<bool>(
+          MaterialPageRoute<bool>(
+            builder: (_) =>
+                InsulinNotificationScreen(userId: user.uid, payload: decoded),
+          ),
+        );
+
+        if (mounted &&
+            !_isSigningOut &&
+            completed == true &&
+            FirebaseAuth.instance.currentUser?.uid == user.uid) {
+          _showMessage('Bildirim işlemi tamamlandı.');
+        }
+
         return;
       }
 
@@ -136,31 +140,44 @@ class _MainScreenState extends State<MainScreen> {
         return;
       }
 
-      // Bildirimdeki tür yerine güncel sunucu kaydını kullan.
       final type = data['type'];
 
-      final RecordTab tab;
-
-      if (type == 'fasting' || type == 'postMeal') {
-        tab = RecordTab.glucose;
-      } else if (type == 'insulin') {
-        tab = RecordTab.insulin;
-      } else {
-        _showMessage('Hatırlatıcı türü tanınamadı.');
+      if (type != 'fasting' && type != 'postMeal') {
+        _showMessage(
+          'Hatırlatıcı türü değişmiş. Güncel planı '
+          'Hatırlatıcılar bölümünden açın.',
+        );
         return;
       }
 
-      _openRecords(tab);
+      final currentKey = NotificationService.scheduleKey(
+        type: type as String,
+        hour: data['hour'] as int,
+        minute: data['minute'] as int,
+        weekdays: List<int>.from(data['weekdays'] as List),
+        note: data['note'] as String,
+      );
+
+      final originalKey = decoded['scheduleKey'];
+
+      if (originalKey != null && originalKey != currentKey) {
+        _showMessage(
+          'Bu hatırlatıcı değiştirilmiş. Güncel planı kontrol edin.',
+        );
+        return;
+      }
+
+      _openRecords(RecordTab.glucose);
 
       await _openAddRecord();
     } catch (error, stackTrace) {
-      debugPrint('Bildirimden kayıt formu açılamadı: $error');
+      debugPrint('Bildirim işlemi açılamadı: $error');
       debugPrintStack(stackTrace: stackTrace);
 
       if (mounted && !_isSigningOut) {
         _showMessage(
-          'Hatırlatıcı kontrol edilemedi. Bağlantınızı kontrol edin. '
-          'Kaydınızı Kayıtlar bölümünden ekleyebilirsiniz.',
+          'Bildirim kontrol edilemedi. Bağlantınızı kontrol edin. '
+          'Takibe Hatırlatıcılar bölümünden ulaşabilirsiniz.',
         );
       }
     } finally {
