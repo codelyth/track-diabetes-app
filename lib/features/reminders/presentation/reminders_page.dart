@@ -10,7 +10,8 @@ import '../data/reminder_repository.dart';
 import '../data/reminder_scheduler.dart';
 import '../domain/reminder.dart';
 import 'add_reminder_screen.dart';
-import 'notification_test_page.dart';
+import '../../settings/presentation/notification_settings_page.dart';
+import '../../../core/notifications/notification_service.dart';
 
 enum _ReminderAction { edit, delete }
 
@@ -38,9 +39,12 @@ class _RemindersPageState extends State<RemindersPage>
   bool _hasData = false;
 
   String? _loadError;
-  String _scheduleStatus = 'Hatırlatıcılar yükleniyor...';
+  String _scheduleStatus = '';
+  bool _scheduleFailed = false;
 
   int _syncVersion = 0;
+  bool? _notificationsEnabled;
+  bool? _exactEnabled;
 
   @override
   void initState() {
@@ -111,6 +115,9 @@ class _RemindersPageState extends State<RemindersPage>
     final version = ++_syncVersion;
 
     try {
+      final notifications = await NotificationService.instance
+          .notificationsEnabled();
+      final exact = await NotificationService.instance.exactAlarmsEnabled();
       final status = await _scheduler.synchronize(
         userId: widget.userId,
         reminders: _reminders,
@@ -118,7 +125,12 @@ class _RemindersPageState extends State<RemindersPage>
 
       if (!mounted || version != _syncVersion) return;
 
-      setState(() => _scheduleStatus = status);
+      setState(() {
+        _scheduleStatus = status;
+        _scheduleFailed = false;
+        _notificationsEnabled = notifications;
+        _exactEnabled = exact;
+      });
     } catch (error, stackTrace) {
       debugPrint('Bildirimler eşitlenemedi: $error');
       debugPrintStack(stackTrace: stackTrace);
@@ -126,9 +138,10 @@ class _RemindersPageState extends State<RemindersPage>
       if (!mounted || version != _syncVersion) return;
 
       setState(() {
+        _scheduleFailed = true;
         _scheduleStatus =
             'Bildirim zamanlaması tamamlanamadı. '
-            'Bazı bildirimler kurulmamış olabilir. Yenile’ye basın.';
+            'Bazı bildirimler kurulmamış olabilir. Yeniden deneyin.';
       });
     }
   }
@@ -243,14 +256,9 @@ class _RemindersPageState extends State<RemindersPage>
     }
   }
 
-  Future<void> _openTests() async {
+  Future<void> _openNotificationSettings() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: const Text('Bildirim ayarları ve test')),
-          body: const SafeArea(child: NotificationTestPage()),
-        ),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const NotificationSettingsPage()),
     );
 
     if (!mounted) return;
@@ -282,41 +290,45 @@ class _RemindersPageState extends State<RemindersPage>
           style: TextStyle(color: AppColors.muted, height: 1.5),
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+        if (_scheduleFailed) ...[
+          Text(_scheduleStatus),
+          TextButton(
+            onPressed: _isWorking ? null : _refresh,
+            child: const Text('Yeniden dene'),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (_notificationsEnabled == false || _exactEnabled == false)
+          Material(
             color: AppColors.lavender,
             borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Bu cihazdaki bildirimler',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              Text(_scheduleStatus, style: const TextStyle(height: 1.5)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextButton.icon(
-                    onPressed: _isWorking ? null : _openTests,
-                    icon: const Icon(Icons.settings_outlined),
-                    label: const Text('İzinler ve test'),
+                  Text(
+                    _notificationsEnabled == false
+                        ? 'Bildirimler kapalı'
+                        : 'Hatırlatıcılar gecikebilir',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  TextButton.icon(
-                    onPressed: _isWorking ? null : _refresh,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Yenile'),
+                  const SizedBox(height: 8),
+                  Text(
+                    _notificationsEnabled == false
+                        ? 'Hatırlatıcıların size ulaşması için bildirim iznini açın.'
+                        : 'Daha hassas zamanlama için zamanında hatırlatma iznini açabilirsiniz.',
+                  ),
+                  TextButton(
+                    onPressed: _isWorking ? null : _openNotificationSettings,
+                    child: const Text('Bildirim ayarları'),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+        if (_notificationsEnabled == false || _exactEnabled == false)
+          const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: _isWorking ? null : () => _openForm(),
           icon: const Icon(Icons.add),

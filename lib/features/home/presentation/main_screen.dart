@@ -13,6 +13,7 @@ import '../../insulin/presentation/add_insulin_screen.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../reminders/presentation/reminders_page.dart';
 import '../../settings/presentation/settings_page.dart';
+import '../../settings/presentation/notification_settings_page.dart';
 import '../../reminders/presentation/insulin_notification_screen.dart';
 import '../data/home_widget_service.dart';
 import 'overview_page.dart';
@@ -63,7 +64,12 @@ class _MainScreenState extends State<MainScreen> {
 
       if (!mounted) return;
 
+      final openedFromNotification =
+          _notifications.pendingPayload.value != null;
       await _openPendingNotification();
+      if (!mounted || _isSigningOut || openedFromNotification) return;
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      await showNotificationIntroduction(context);
     } catch (error, stackTrace) {
       debugPrint('Bildirim yönlendirmesi başlatılamadı: $error');
       debugPrintStack(stackTrace: stackTrace);

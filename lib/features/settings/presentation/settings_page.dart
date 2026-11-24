@@ -1,12 +1,10 @@
-import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/notifications/notification_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/delete_account_screen.dart';
 import 'update_account_screen.dart';
+import 'notification_settings_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -22,105 +20,21 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage>
-    with WidgetsBindingObserver {
-  final _notifications = NotificationService.instance;
-
+class _SettingsPageState extends State<SettingsPage> {
   late final Stream<User?> _userStream;
-
-  bool? _notificationsEnabled;
-  bool? _exactAlarmsEnabled;
-
-  bool _checkingPermissions = false;
-  bool _permissionActionRunning = false;
-
-  String? _permissionError;
-  int _permissionRevision = 0;
-
-  bool get _busy => widget.isSigningOut || _permissionActionRunning;
+  bool get _busy => widget.isSigningOut;
 
   @override
   void initState() {
     super.initState();
-
     _userStream = FirebaseAuth.instance.userChanges();
-
-    WidgetsBinding.instance.addObserver(this);
-
-    unawaited(_loadPermissions());
   }
 
-  @override
-  void dispose() {
-    ++_permissionRevision;
-    WidgetsBinding.instance.removeObserver(this);
-
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      unawaited(_loadPermissions());
-    }
-  }
-
-  Future<void> _loadPermissions() async {
-    if (!_notifications.isSupported || !mounted) return;
-
-    final revision = ++_permissionRevision;
-
-    setState(() {
-      _checkingPermissions = true;
-      _permissionError = null;
-    });
-
-    try {
-      final enabled = await _notifications.notificationsEnabled();
-      final exact = await _notifications.exactAlarmsEnabled();
-
-      if (!mounted || revision != _permissionRevision) return;
-
-      setState(() {
-        _notificationsEnabled = enabled;
-        _exactAlarmsEnabled = exact;
-      });
-    } catch (error) {
-      if (!mounted || revision != _permissionRevision) return;
-
-      setState(() {
-        _notificationsEnabled = null;
-        _exactAlarmsEnabled = null;
-        _permissionError = 'İzin durumu kontrol edilemedi.';
-      });
-
-      debugPrint('Ayarlar izin kontrolü başarısız: $error');
-    } finally {
-      if (mounted && revision == _permissionRevision) {
-        setState(() => _checkingPermissions = false);
-      }
-    }
-  }
-
-  Future<void> _runPermissionAction(Future<void> Function() action) async {
+  Future<void> _openNotificationSettings() async {
     if (_busy) return;
-
-    setState(() => _permissionActionRunning = true);
-
-    try {
-      await action();
-      await _loadPermissions();
-    } catch (error) {
-      if (mounted) {
-        _showMessage('İşlem tamamlanamadı. Tekrar deneyin.');
-      }
-
-      debugPrint('Bildirim ayarı değiştirilemedi: $error');
-    } finally {
-      if (mounted) {
-        setState(() => _permissionActionRunning = false);
-      }
-    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const NotificationSettingsPage()),
+    );
   }
 
   Future<void> _openAccountEditor({required bool changePassword}) async {
@@ -151,13 +65,6 @@ class _SettingsPageState extends State<SettingsPage>
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  String _permissionLabel(bool? enabled) {
-    if (_checkingPermissions) return 'Kontrol ediliyor…';
-    if (enabled == null) return 'Kontrol edilemedi.';
-
-    return enabled ? 'Açık' : 'Kapalı';
   }
 
   Widget _section({required String title, required List<Widget> children}) {
@@ -259,78 +166,17 @@ class _SettingsPageState extends State<SettingsPage>
             _section(
               title: 'Bildirimler',
               children: [
-                if (!_notifications.isSupported)
-                  const Text('Bildirim ayarları bu platformda desteklenmiyor.')
-                else ...[
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.notifications_outlined),
-                    title: const Text('Bildirim İzni'),
-                    subtitle: Text(_permissionLabel(_notificationsEnabled)),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.notifications_outlined),
+                  title: const Text('Bildirim Ayarları'),
+                  subtitle: const Text(
+                    'Bildirim ve zamanlama izinlerini yönetin.',
                   ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.alarm_outlined),
-                    title: const Text('Zamanında Hatırlatma İzni'),
-                    subtitle: Text(_permissionLabel(_exactAlarmsEnabled)),
-                  ),
-                  const Text(
-                    'Zamanında hatırlatma izni kapalıysa '
-                    'bildirimler sistem tarafından geciktirilebilir.',
-                    style: TextStyle(color: AppColors.muted, height: 1.4),
-                  ),
-                  if (_permissionError != null) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      _permissionError!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (_notificationsEnabled == false)
-                        OutlinedButton(
-                          onPressed: _busy || _checkingPermissions
-                              ? null
-                              : () => _runPermissionAction(() async {
-                                  await _notifications
-                                      .requestNotificationPermission();
-                                }),
-                          child: const Text('Bildirim izni ver.'),
-                        ),
-                      if (_exactAlarmsEnabled == false)
-                        OutlinedButton(
-                          onPressed: _busy || _checkingPermissions
-                              ? null
-                              : () => _runPermissionAction(
-                                  _notifications.requestExactAlarmPermission,
-                                ),
-                          child: const Text('Zamanlama izni ver.'),
-                        ),
-                      OutlinedButton.icon(
-                        onPressed: _busy
-                            ? null
-                            : () => _runPermissionAction(
-                                _notifications.openNotificationSettings,
-                              ),
-                        icon: const Icon(Icons.open_in_new),
-                        label: const Text('Sistem Ayarları'),
-                      ),
-                      TextButton.icon(
-                        onPressed: _busy || _checkingPermissions
-                            ? null
-                            : _loadPermissions,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Yenile'),
-                      ),
-                    ],
-                  ),
-                ],
+                  trailing: const Icon(Icons.chevron_right),
+                  enabled: !_busy,
+                  onTap: _openNotificationSettings,
+                ),
               ],
             ),
             const SizedBox(height: 16),
