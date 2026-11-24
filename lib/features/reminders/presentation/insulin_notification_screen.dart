@@ -566,7 +566,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
                         'Plan saat dilimi: $_timeZoneId',
                         style: const TextStyle(
                           color: AppColors.muted,
-                          fontSize: 12,
+                          fontSize: AppTypography.captionSize,
                         ),
                       ),
                       const SizedBox(height: 16),

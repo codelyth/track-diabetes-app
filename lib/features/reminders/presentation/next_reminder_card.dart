@@ -331,6 +331,7 @@ class _NextReminderCardState extends State<NextReminderCard>
                             child: Text(
                               'Hatırlatıcı',
                               style: TextStyle(
+                                fontSize: AppTypography.cardTitleSize,
                                 color: AppColors.text,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -347,7 +348,7 @@ class _NextReminderCardState extends State<NextReminderCard>
                       Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: AppTypography.metricCompactSize,
                           fontWeight: FontWeight.w700,
                           color: AppColors.text,
                         ),
@@ -357,7 +358,7 @@ class _NextReminderCardState extends State<NextReminderCard>
                         subtitle,
                         style: const TextStyle(
                           color: AppColors.muted,
-                          fontSize: 12,
+                          fontSize: AppTypography.captionSize,
                         ),
                       ),
                       if (date != null) ...[
@@ -366,7 +367,7 @@ class _NextReminderCardState extends State<NextReminderCard>
                           date,
                           style: const TextStyle(
                             color: AppColors.muted,
-                            fontSize: 12,
+                            fontSize: AppTypography.captionSize,
                           ),
                         ),
                       ],
@@ -395,7 +396,7 @@ class _NextReminderCardState extends State<NextReminderCard>
                                   'Ertelendi',
                                   style: TextStyle(
                                     color: AppColors.primary,
-                                    fontSize: 11,
+                                    fontSize: AppTypography.captionSize,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -410,7 +411,7 @@ class _NextReminderCardState extends State<NextReminderCard>
                           footer,
                           style: const TextStyle(
                             color: AppColors.muted,
-                            fontSize: 10,
+                            fontSize: AppTypography.captionSize,
                           ),
                         ),
                       ],
@@ -436,7 +437,10 @@ class ReminderNextTime extends StatelessWidget {
     if (!reminder.isEnabled) {
       return const Text(
         'Kapalı · Bildirim planlanmaz',
-        style: TextStyle(color: AppColors.muted, fontSize: 12),
+        style: TextStyle(
+          color: AppColors.muted,
+          fontSize: AppTypography.captionSize,
+        ),
       );
     }
 
@@ -463,7 +467,7 @@ class ReminderNextTime extends StatelessWidget {
           text,
           style: const TextStyle(
             color: AppColors.primary,
-            fontSize: 12,
+            fontSize: AppTypography.captionSize,
             height: 1.5,
           ),
         );

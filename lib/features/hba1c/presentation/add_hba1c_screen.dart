@@ -195,7 +195,7 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
                           ),
                           textInputAction: TextInputAction.next,
                           style: const TextStyle(
-                            fontSize: 32,
+                            fontSize: AppTypography.metricSize,
                             fontWeight: FontWeight.w700,
                             color: AppColors.text,
                           ),

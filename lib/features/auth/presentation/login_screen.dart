@@ -103,7 +103,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Text(
                     'Diyabet Günlüğünüze Hoş Geldiniz',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: AppColors.muted),
+                    style: TextStyle(
+                      fontSize: AppTypography.bodySize,
+                      color: AppColors.muted,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   Container(

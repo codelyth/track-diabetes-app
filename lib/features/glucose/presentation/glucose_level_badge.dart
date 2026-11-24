@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_typography.dart';
+
 import '../domain/glucose_reading.dart';
 
 extension GlucoseLevelStyle on GlucoseLevel {
@@ -60,7 +62,7 @@ class GlucoseLevelBadge extends StatelessWidget {
             level.label,
             style: TextStyle(
               color: level.color,
-              fontSize: compact ? 11 : 12,
+              fontSize: AppTypography.badgeSize,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -83,7 +85,7 @@ class GlucoseRangeNote extends StatelessWidget {
       'Kişisel hedefler doktorunuzun belirlediği aralığa göre değişebilir.',
       style: TextStyle(
         color: Theme.of(context).colorScheme.onSurfaceVariant,
-        fontSize: 11,
+        fontSize: AppTypography.captionSize,
         height: 1.5,
       ),
     );

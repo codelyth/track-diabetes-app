@@ -120,7 +120,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.muted,
-                      fontSize: 15,
+                      fontSize: AppTypography.bodySize,
                       height: 1.6,
                     ),
                   ),

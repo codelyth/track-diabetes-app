@@ -281,7 +281,7 @@ class _Hba1cRecordsPageState extends State<Hba1cRecordsPage> {
                       title: Text(
                         _value(result),
                         style: const TextStyle(
-                          fontSize: 22,
+                          fontSize: AppTypography.metricCompactSize,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

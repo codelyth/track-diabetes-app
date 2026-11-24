@@ -268,7 +268,7 @@ class _InsulinTrackingPageState extends State<InsulinTrackingPage>
                 child: Text(
                   occurrence.timeLabel,
                   style: const TextStyle(
-                    fontSize: 26,
+                    fontSize: AppTypography.metricCompactSize,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -291,7 +291,7 @@ class _InsulinTrackingPageState extends State<InsulinTrackingPage>
               style: TextStyle(
                 color: AppColors.muted,
                 height: 1.4,
-                fontSize: 12,
+                fontSize: AppTypography.captionSize,
               ),
             ),
           ] else if (skipped) ...[
@@ -428,7 +428,7 @@ class _InsulinTrackingPageState extends State<InsulinTrackingPage>
                         'veya kapatırsanız bu liste de değişebilir.',
                         style: TextStyle(
                           color: AppColors.muted,
-                          fontSize: 12,
+                          fontSize: AppTypography.captionSize,
                           height: 1.5,
                         ),
                       ),

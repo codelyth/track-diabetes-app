@@ -45,6 +45,9 @@ class GlucoseSummaryChart extends StatelessWidget {
       return reading.level.severity == GlucoseSeverity.alert;
     }).length;
 
+    final textScaler = MediaQuery.textScalerOf(context);
+    final axisSize = textScaler.scale(AppTypography.chartLabelSize);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -58,12 +61,15 @@ class GlucoseSummaryChart extends StatelessWidget {
               'Ayrıntılar Kayıtlar ekranında.',
           child: ExcludeSemantics(
             child: SizedBox(
-              height: 170,
+              height:
+                  170 +
+                  math.max(0.0, axisSize - AppTypography.chartLabelSize) * 3,
               width: double.infinity,
               child: CustomPaint(
                 painter: _GlucoseChartPainter(
                   readings: sorted,
                   average: average,
+                  textScaler: textScaler,
                 ),
               ),
             ),
@@ -101,7 +107,10 @@ class GlucoseSummaryChart extends StatelessWidget {
           sorted.length == 1
               ? 'Tek ölçüm noktası gösteriliyor.'
               : 'Çizgiler yalnızca kayıtlı ölçümleri birleştirir.',
-          style: const TextStyle(color: AppColors.muted, fontSize: 11),
+          style: const TextStyle(
+            color: AppColors.muted,
+            fontSize: AppTypography.chartLabelSize,
+          ),
         ),
       ],
     );
@@ -136,7 +145,10 @@ class _ChartLegend extends StatelessWidget {
         const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(color: AppColors.muted, fontSize: 11),
+          style: const TextStyle(
+            color: AppColors.muted,
+            fontSize: AppTypography.chartLabelSize,
+          ),
         ),
       ],
     );
@@ -144,10 +156,15 @@ class _ChartLegend extends StatelessWidget {
 }
 
 class _GlucoseChartPainter extends CustomPainter {
-  const _GlucoseChartPainter({required this.readings, required this.average});
+  const _GlucoseChartPainter({
+    required this.readings,
+    required this.average,
+    required this.textScaler,
+  });
 
   final List<GlucoseReading> readings;
   final double average;
+  final TextScaler textScaler;
 
   String _two(int value) => value.toString().padLeft(2, '0');
 
@@ -173,9 +190,10 @@ class _GlucoseChartPainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(color: color, fontSize: 11),
+        style: TextStyle(color: color, fontSize: AppTypography.chartLabelSize),
       ),
       textDirection: TextDirection.ltr,
+      textScaler: textScaler,
       maxLines: 1,
     )..layout();
 
@@ -238,7 +256,18 @@ class _GlucoseChartPainter extends CustomPainter {
     canvas.save();
     canvas.clipRect(Offset.zero & size);
 
-    final plot = Rect.fromLTRB(44, 10, size.width - 12, size.height - 30);
+    final labelSize = textScaler.scale(AppTypography.chartLabelSize);
+    final leftInset = math.min(
+      size.width * 0.35,
+      math.max(44.0, labelSize * 3.3),
+    );
+    final bottomInset = math.max(30.0, labelSize * 2.2);
+    final plot = Rect.fromLTRB(
+      leftInset,
+      10,
+      size.width - 12,
+      size.height - bottomInset,
+    );
 
     final values = readings
         .map((reading) => reading.valueMgDl.toDouble())
@@ -365,6 +394,8 @@ class _GlucoseChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GlucoseChartPainter oldDelegate) {
-    return oldDelegate.readings != readings || oldDelegate.average != average;
+    return oldDelegate.readings != readings ||
+        oldDelegate.average != average ||
+        oldDelegate.textScaler != textScaler;
   }
 }

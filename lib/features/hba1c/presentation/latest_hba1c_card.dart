@@ -65,6 +65,7 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                     child: Text(
                       'Son HbA1c',
                       style: TextStyle(
+                        fontSize: AppTypography.cardTitleSize,
                         fontWeight: FontWeight.w600,
                         color: AppColors.text,
                       ),
@@ -116,7 +117,7 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                             ? 'Sonuç yok'
                             : '%${latest.valuePercent.toString().replaceAll('.', ',')}',
                         style: const TextStyle(
-                          fontSize: 26,
+                          fontSize: AppTypography.metricCompactSize,
                           fontWeight: FontWeight.w700,
                           color: AppColors.text,
                         ),
@@ -128,7 +129,7 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                             : _date(latest.testDate),
                         style: const TextStyle(
                           color: AppColors.muted,
-                          fontSize: 12,
+                          fontSize: AppTypography.captionSize,
                         ),
                       ),
                       if (!widget.compact) ...[
@@ -137,7 +138,7 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                           'Kullanıcının kaydettiği laboratuvar sonucu.',
                           style: TextStyle(
                             color: AppColors.muted,
-                            fontSize: 12,
+                            fontSize: AppTypography.captionSize,
                           ),
                         ),
                       ],

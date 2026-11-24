@@ -204,7 +204,7 @@ class _OverviewPageState extends State<OverviewPage>
                       Text(
                         latest == null ? 'Ölçüm Yok' : '${latest.valueMgDl}',
                         style: TextStyle(
-                          fontSize: 30,
+                          fontSize: AppTypography.metricSize,
                           fontWeight: FontWeight.w700,
                           color: latestLevel?.color ?? AppColors.text,
                         ),
@@ -213,7 +213,7 @@ class _OverviewPageState extends State<OverviewPage>
                         Text(
                           'mg/dL',
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: AppTypography.cardTitleSize,
                             fontWeight: FontWeight.w600,
                             color: latestLevel?.color ?? AppColors.text,
                           ),
@@ -232,7 +232,7 @@ class _OverviewPageState extends State<OverviewPage>
                               '${_date(latestDate)} ${_time(latestDate)}',
                     style: const TextStyle(
                       color: AppColors.muted,
-                      fontSize: 12,
+                      fontSize: AppTypography.captionSize,
                     ),
                   ),
                 ],
@@ -261,7 +261,10 @@ class _OverviewPageState extends State<OverviewPage>
             const SizedBox(height: 8),
             Text(
               '$rangeLabel • ${selected.length} Ölçüm',
-              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: AppTypography.captionSize,
+              ),
             ),
             const SizedBox(height: 12),
             _ResponsivePair(
@@ -298,7 +301,7 @@ class _OverviewPageState extends State<OverviewPage>
                       Text(
                         selected.isEmpty ? 'Kayıt Yok' : _average(selected),
                         style: const TextStyle(
-                          fontSize: 28,
+                          fontSize: AppTypography.metricSize,
                           fontWeight: FontWeight.w700,
                           color: AppColors.text,
                         ),
@@ -318,7 +321,7 @@ class _OverviewPageState extends State<OverviewPage>
                     '${selected.length} Ölçüm • Açlık ve Tokluk Birlikte',
                     style: const TextStyle(
                       color: AppColors.muted,
-                      fontSize: 12,
+                      fontSize: AppTypography.captionSize,
                     ),
                   ),
                   if (selected.isNotEmpty) ...[
@@ -347,7 +350,7 @@ class _OverviewPageState extends State<OverviewPage>
                       'süreyi göstermez.',
                       style: TextStyle(
                         color: AppColors.muted,
-                        fontSize: 10,
+                        fontSize: AppTypography.captionSize,
                         height: 1.5,
                       ),
                     ),
@@ -378,7 +381,10 @@ class _OverviewPageState extends State<OverviewPage>
         const SizedBox(height: 4),
         Text(
           _date(now),
-          style: const TextStyle(color: AppColors.muted, fontSize: 13),
+          style: const TextStyle(
+            color: AppColors.muted,
+            fontSize: AppTypography.captionSize,
+          ),
         ),
         const SizedBox(height: 16),
         _buildGlucoseSection(),
@@ -484,6 +490,7 @@ class _CardHeading extends StatelessWidget {
           child: Text(
             title,
             style: const TextStyle(
+              fontSize: AppTypography.cardTitleSize,
               color: AppColors.text,
               fontWeight: FontWeight.w600,
             ),
@@ -527,7 +534,7 @@ class _AverageCard extends StatelessWidget {
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: AppTypography.metricCompactSize,
                   fontWeight: FontWeight.w700,
                   color: AppColors.text,
                 ),
@@ -535,14 +542,20 @@ class _AverageCard extends StatelessWidget {
               if (count > 0)
                 const Text(
                   'mg/dL',
-                  style: TextStyle(color: AppColors.muted, fontSize: 11),
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: AppTypography.captionSize,
+                  ),
                 ),
             ],
           ),
           const SizedBox(height: 5),
           Text(
             '$count Ölçüm',
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: AppTypography.captionSize,
+            ),
           ),
         ],
       ),
@@ -568,7 +581,7 @@ class _MeasurementCountChip extends StatelessWidget {
         label,
         style: TextStyle(
           color: level.color,
-          fontSize: 11,
+          fontSize: AppTypography.captionSize,
           fontWeight: FontWeight.w600,
         ),
       ),

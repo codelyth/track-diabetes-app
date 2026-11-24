@@ -284,7 +284,7 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                   'Hedef aralıkta geçirilen süreyi göstermez.',
                   style: TextStyle(
                     color: AppColors.muted,
-                    fontSize: 11,
+                    fontSize: AppTypography.captionSize,
                     height: 1.5,
                   ),
                 ),
@@ -338,7 +338,7 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                                       style: TextStyle(
                                         color: level.color,
                                         fontWeight: FontWeight.w700,
-                                        fontSize: 16,
+                                        fontSize: AppTypography.bodySize,
                                       ),
                                     ),
                                   ),
@@ -361,7 +361,10 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                 const Text(
                   'Detay için bir satıra dokunun. '
                   'Tablo sığmazsa yatay kaydırabilirsiniz.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: AppTypography.captionSize,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const GlucoseRangeNote(),
@@ -392,7 +395,7 @@ class _CountChip extends StatelessWidget {
         text,
         style: TextStyle(
           color: level.color,
-          fontSize: 12,
+          fontSize: AppTypography.captionSize,
           fontWeight: FontWeight.w600,
         ),
       ),

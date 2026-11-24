@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'app_typography.dart';
+
+export 'app_typography.dart';
+
 class AppColors {
   AppColors._();
 
@@ -21,24 +25,49 @@ class AppTheme {
       brightness: Brightness.light,
     );
 
+    final defaults = ThemeData(useMaterial3: true, colorScheme: colorScheme);
+    final textTheme = AppTypography.textTheme.apply(
+      bodyColor: AppColors.text,
+      displayColor: AppColors.text,
+    );
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.w700,
-          color: AppColors.text,
+      textTheme: textTheme,
+      appBarTheme: defaults.appBarTheme.copyWith(
+        titleTextStyle: AppTypography.pageTitle.copyWith(color: AppColors.text),
+      ),
+      listTileTheme: defaults.listTileTheme.copyWith(
+        titleTextStyle: textTheme.bodyLarge,
+        subtitleTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.muted,
         ),
-        titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: AppColors.text,
+      ),
+      navigationBarTheme: defaults.navigationBarTheme.copyWith(
+        labelTextStyle: const WidgetStatePropertyAll(
+          TextStyle(
+            fontSize: AppTypography.navigationLabelSize,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        bodyMedium: TextStyle(fontSize: 14, color: AppColors.text),
+      ),
+      tabBarTheme: defaults.tabBarTheme.copyWith(
+        labelStyle: AppTypography.button,
+        unselectedLabelStyle: const TextStyle(fontSize: AppTypography.bodySize),
+      ),
+      chipTheme: defaults.chipTheme.copyWith(labelStyle: textTheme.bodyMedium),
+      floatingActionButtonTheme: defaults.floatingActionButtonTheme.copyWith(
+        extendedTextStyle: AppTypography.button,
       ),
       inputDecorationTheme: InputDecorationTheme(
+        labelStyle: AppTypography.body,
+        hintStyle: AppTypography.body.copyWith(color: AppColors.muted),
+        helperStyle: AppTypography.caption.copyWith(color: AppColors.muted),
+        errorStyle: AppTypography.caption.copyWith(color: colorScheme.error),
+        helperMaxLines: 3,
+        errorMaxLines: 3,
         filled: true,
         fillColor: AppColors.field,
         contentPadding: const EdgeInsets.symmetric(
@@ -63,14 +92,31 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 56),
-          textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+          textStyle: AppTypography.button,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          textStyle: AppTypography.button,
+          minimumSize: const Size(0, 48),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          textStyle: AppTypography.button,
+          minimumSize: const Size(0, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          textStyle: AppTypography.button,
+          minimumSize: const Size(0, 48),
+        ),
       ),
     );
   }

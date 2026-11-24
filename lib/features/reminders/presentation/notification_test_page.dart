@@ -282,7 +282,11 @@ class _NotificationTestPageState extends State<NotificationTestPage>
           'Bildirim görünümü ve sesi cihaz ayarlarına bağlıdır. '
           'Rahatsız Etmeyin veya pil kısıtlamaları bildirimin '
           'görünmesini ya da zamanını etkileyebilir.',
-          style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5),
+          style: TextStyle(
+            color: AppColors.muted,
+            fontSize: AppTypography.captionSize,
+            height: 1.5,
+          ),
         ),
       ],
     );

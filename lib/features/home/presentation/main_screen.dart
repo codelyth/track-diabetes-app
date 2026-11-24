@@ -294,6 +294,13 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight:
+            MediaQuery.textScalerOf(context)
+                    .scale(AppTypography.pageTitleSize) *
+                1.25 +
+            MediaQuery.textScalerOf(context).scale(AppTypography.captionSize) *
+                1.3 +
+            16,
         backgroundColor: AppColors.background,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,7 +311,10 @@ class _MainScreenState extends State<MainScreen> {
             ),
             Text(
               _titles[_selectedIndex],
-              style: const TextStyle(fontSize: 13, color: AppColors.muted),
+              style: const TextStyle(
+                fontSize: AppTypography.captionSize,
+                color: AppColors.muted,
+              ),
             ),
           ],
         ),

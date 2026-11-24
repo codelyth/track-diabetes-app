@@ -240,7 +240,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
                                 style: const TextStyle(
-                                  fontSize: 32,
+                                  fontSize: AppTypography.metricSize,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.text,
                                 ),

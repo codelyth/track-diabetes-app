@@ -173,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage>
             Text(
               title,
               style: const TextStyle(
-                fontSize: 17,
+                fontSize: AppTypography.cardTitleSize,
                 fontWeight: FontWeight.w700,
                 color: AppColors.text,
               ),
@@ -219,7 +219,7 @@ class _SettingsPageState extends State<SettingsPage>
                           Text(
                             name == null || name.isEmpty ? 'Kullanıcı' : name,
                             style: const TextStyle(
-                              fontSize: 16,
+                              fontSize: AppTypography.bodySize,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

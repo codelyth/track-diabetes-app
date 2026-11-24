@@ -253,7 +253,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                                         child: Text(
                                           '$hour:$minute',
                                           style: const TextStyle(
-                                            fontSize: 28,
+                                            fontSize: AppTypography.metricSize,
                                             fontWeight: FontWeight.w700,
                                             color: AppColors.text,
                                           ),
@@ -272,7 +272,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                             const Text(
                               '24 saat biçimi · Cihazın yerel saatine göre.',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: AppTypography.captionSize,
                                 color: AppColors.muted,
                               ),
                             ),
@@ -377,7 +377,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: AppColors.muted,
-                                  fontSize: 12,
+                                  fontSize: AppTypography.captionSize,
                                 ),
                               ),
                             ],

@@ -343,7 +343,10 @@ class _RemindersPageState extends State<RemindersPage>
           const SizedBox(height: 12),
           const Text(
             'Sunucu onayı bekleniyor. Bağlantı yoksa işlem uzayabilir.',
-            style: TextStyle(color: AppColors.muted, fontSize: 12),
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: AppTypography.captionSize,
+            ),
           ),
           const SizedBox(height: 12),
         ],
@@ -390,7 +393,11 @@ class _RemindersPageState extends State<RemindersPage>
           'durum alanından kontrol edin.\n\n'
           'Hatırlatıcıyı kapatmak veya bildirimi silmek, '
           'ölçüm ya da insülin uygulaması kaydı oluşturmaz.',
-          style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5),
+          style: TextStyle(
+            color: AppColors.muted,
+            fontSize: AppTypography.captionSize,
+            height: 1.5,
+          ),
         ),
       ],
     );
@@ -454,7 +461,7 @@ class _RemindersPageState extends State<RemindersPage>
                 Text(
                   reminder.timeLabel,
                   style: const TextStyle(
-                    fontSize: 30,
+                    fontSize: AppTypography.metricSize,
                     fontWeight: FontWeight.w700,
                     color: AppColors.text,
                   ),

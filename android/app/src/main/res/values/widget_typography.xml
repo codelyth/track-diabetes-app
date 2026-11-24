@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ana ekran widget'ının tüm yazı boyutları. -->
+    <dimen name="widget_text_header">16sp</dimen>
+    <dimen name="widget_text_metric">26sp</dimen>
+    <dimen name="widget_text_body">12sp</dimen>
+    <dimen name="widget_text_caption">11sp</dimen>
+    <dimen name="widget_text_unit">10sp</dimen>
+</resources>

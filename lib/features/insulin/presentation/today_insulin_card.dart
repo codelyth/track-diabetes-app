@@ -86,6 +86,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                         child: Text(
                           'Bugünkü insülin',
                           style: TextStyle(
+                            fontSize: AppTypography.cardTitleSize,
                             fontWeight: FontWeight.w600,
                             color: AppColors.text,
                           ),
@@ -96,7 +97,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                           '${entries.length} kayıt',
                           style: const TextStyle(
                             color: AppColors.muted,
-                            fontSize: 12,
+                            fontSize: AppTypography.captionSize,
                           ),
                         ),
                       const SizedBox(width: 4),
@@ -131,7 +132,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                       'anlamına gelmez.',
                       style: TextStyle(
                         color: AppColors.muted,
-                        fontSize: 12,
+                        fontSize: AppTypography.captionSize,
                         height: 1.5,
                       ),
                     )
@@ -164,7 +165,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                                     entry.kind.label,
                                     style: const TextStyle(
                                       color: AppColors.muted,
-                                      fontSize: 12,
+                                      fontSize: AppTypography.captionSize,
                                     ),
                                   ),
                                 ],
@@ -190,7 +191,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                         '+${entries.length - 3} kayıt daha',
                         style: const TextStyle(
                           color: AppColors.primary,
-                          fontSize: 12,
+                          fontSize: AppTypography.captionSize,
                         ),
                       ),
                     ],
