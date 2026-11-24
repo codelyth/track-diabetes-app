@@ -116,7 +116,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         )
 
         views.setTextViewText(R.id.widget_glucose_value, "—")
-        views.setTextViewText(R.id.widget_glucose_type, "Giriş yapın")
+        views.setTextViewText(R.id.widget_glucose_type, "Giriş yapın.")
         views.setTextViewText(R.id.widget_glucose_date, "")
 
         // Çıkış, boş kayıt veya hata durumunda eski renk kalmasın.
@@ -131,10 +131,10 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         )
 
         views.setTextViewText(R.id.widget_average_value, "—")
-        views.setTextViewText(R.id.widget_average_count, "Giriş yapın")
+        views.setTextViewText(R.id.widget_average_count, "Giriş yapın.")
 
         views.setTextViewText(R.id.widget_reminder_time, "—")
-        views.setTextViewText(R.id.widget_reminder_type, "Giriş yapın")
+        views.setTextViewText(R.id.widget_reminder_type, "Giriş yapın.")
         views.setTextViewText(R.id.widget_reminder_date, "")
 
         views.setTextViewText(
@@ -153,7 +153,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
 
         views.setTextViewText(
             R.id.widget_footer,
-            "Son ölçüm henüz yok"
+            "Son ölçüm henüz yok."
         )
 
         bindLastReading(views, snapshot, now, zone)
@@ -171,7 +171,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
             snapshot.optBoolean("glucoseError") -> {
                 views.setTextViewText(
                     R.id.widget_glucose_type,
-                    "Veri alınamadı"
+                    "Veri alınamadı."
                 )
 
                 views.setTextViewText(
@@ -183,12 +183,12 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
             !snapshot.optBoolean("glucoseReady") -> {
                 views.setTextViewText(
                     R.id.widget_glucose_type,
-                    "Yükleniyor"
+                    "Yükleniyor..."
                 )
 
                 views.setTextViewText(
                     R.id.widget_footer,
-                    "Ölçümler yükleniyor"
+                    "Ölçümler yükleniyor..."
                 )
             }
 
@@ -198,7 +198,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                 if (reading == null) {
                     views.setTextViewText(
                         R.id.widget_glucose_type,
-                        "Henüz ölçüm yok"
+                        "Henüz ölçüm yok."
                     )
 
                     return
@@ -294,7 +294,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         if (snapshot.optBoolean("todayError")) {
             views.setTextViewText(
                 R.id.widget_average_count,
-                "Veri alınamadı"
+                "Veri alınamadı."
             )
 
             return
@@ -303,7 +303,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         if (!snapshot.optBoolean("todayReady")) {
             views.setTextViewText(
                 R.id.widget_average_count,
-                "Yükleniyor"
+                "Yükleniyor..."
             )
 
             return
@@ -338,7 +338,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         if (count == 0) {
             views.setTextViewText(
                 R.id.widget_average_count,
-                "Henüz ölçüm yok"
+                "Henüz ölçüm yok."
             )
 
             return
@@ -351,7 +351,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
 
         views.setTextViewText(
             R.id.widget_average_count,
-            "$count ölçüm"
+            "$count Ölçüm"
         )
     }
 
@@ -364,7 +364,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         if (snapshot.optBoolean("reminderError")) {
             views.setTextViewText(
                 R.id.widget_reminder_type,
-                "Veri alınamadı"
+                "Veri alınamadı."
             )
 
             return
@@ -373,7 +373,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         if (!snapshot.optBoolean("reminderReady")) {
             views.setTextViewText(
                 R.id.widget_reminder_type,
-                "Yükleniyor"
+                "Yükleniyor..."
             )
 
             return
@@ -384,7 +384,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         if (next == null) {
             views.setTextViewText(
                 R.id.widget_reminder_type,
-                "Aktif plan yok"
+                "Aktif plan yok."
             )
 
             return
@@ -420,19 +420,19 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
 
         return when {
             minutes < 0 ->
-                "Son ölçüm: ${measuredAt.format(shortDateFormatter)}"
+                "Son Ölçüm: ${measuredAt.format(shortDateFormatter)}"
 
             minutes < 1 ->
-                "Son ölçüm az önce"
+                "Son ölçüm Az Önce"
 
             minutes < 60 ->
-                "Son ölçüm $minutes dk önce"
+                "Son Ölçüm $minutes dk Önce"
 
             minutes < 1440 ->
-                "Son ölçüm ${minutes / 60} sa önce"
+                "Son Ölçüm ${minutes / 60} sa Önce"
 
             else ->
-                "Son ölçüm: ${measuredAt.format(shortDateFormatter)}"
+                "Son Ölçüm: ${measuredAt.format(shortDateFormatter)}"
         }
     }
 

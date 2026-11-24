@@ -54,6 +54,7 @@ class _SettingsPageState extends State<SettingsPage>
   void dispose() {
     ++_permissionRevision;
     WidgetsBinding.instance.removeObserver(this);
+
     super.dispose();
   }
 
@@ -154,32 +155,33 @@ class _SettingsPageState extends State<SettingsPage>
 
   String _permissionLabel(bool? enabled) {
     if (_checkingPermissions) return 'Kontrol ediliyor…';
-    if (enabled == null) return 'Kontrol edilemedi';
+    if (enabled == null) return 'Kontrol edilemedi.';
 
     return enabled ? 'Açık' : 'Kapalı';
   }
 
   Widget _section({required String title, required List<Widget> children}) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppColors.text,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.text,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          ...children,
-        ],
+            const SizedBox(height: 10),
+            ...children,
+          ],
+        ),
       ),
     );
   }
@@ -235,8 +237,8 @@ class _SettingsPageState extends State<SettingsPage>
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.edit_outlined),
-                  title: const Text('Profili düzenle'),
-                  subtitle: const Text('Ad ve soyadınızı değiştirin'),
+                  title: const Text('Profili Düzenle'),
+                  subtitle: const Text('Ad ve soyadınızı değiştirin.'),
                   trailing: const Icon(Icons.chevron_right),
                   enabled: !_busy,
                   onTap: () => _openAccountEditor(changePassword: false),
@@ -245,8 +247,8 @@ class _SettingsPageState extends State<SettingsPage>
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.lock_outline),
-                  title: const Text('Şifre değiştir'),
-                  subtitle: const Text('Hesap şifrenizi güncelleyin'),
+                  title: const Text('Şifre Değiştir'),
+                  subtitle: const Text('Hesap şifrenizi güncelleyin.'),
                   trailing: const Icon(Icons.chevron_right),
                   enabled: !_busy,
                   onTap: () => _openAccountEditor(changePassword: true),
@@ -263,13 +265,13 @@ class _SettingsPageState extends State<SettingsPage>
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.notifications_outlined),
-                    title: const Text('Bildirim izni'),
+                    title: const Text('Bildirim İzni'),
                     subtitle: Text(_permissionLabel(_notificationsEnabled)),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.alarm_outlined),
-                    title: const Text('Zamanında hatırlatma izni'),
+                    title: const Text('Zamanında Hatırlatma İzni'),
                     subtitle: Text(_permissionLabel(_exactAlarmsEnabled)),
                   ),
                   const Text(
@@ -299,7 +301,7 @@ class _SettingsPageState extends State<SettingsPage>
                                   await _notifications
                                       .requestNotificationPermission();
                                 }),
-                          child: const Text('Bildirim izni ver'),
+                          child: const Text('Bildirim izni ver.'),
                         ),
                       if (_exactAlarmsEnabled == false)
                         OutlinedButton(
@@ -308,7 +310,7 @@ class _SettingsPageState extends State<SettingsPage>
                               : () => _runPermissionAction(
                                   _notifications.requestExactAlarmPermission,
                                 ),
-                          child: const Text('Zamanlama izni ver'),
+                          child: const Text('Zamanlama izni ver.'),
                         ),
                       OutlinedButton.icon(
                         onPressed: _busy
@@ -317,7 +319,7 @@ class _SettingsPageState extends State<SettingsPage>
                                 _notifications.openNotificationSettings,
                               ),
                         icon: const Icon(Icons.open_in_new),
-                        label: const Text('Sistem ayarları'),
+                        label: const Text('Sistem Ayarları'),
                       ),
                       TextButton.icon(
                         onPressed: _busy || _checkingPermissions
@@ -333,7 +335,7 @@ class _SettingsPageState extends State<SettingsPage>
             ),
             const SizedBox(height: 16),
             _section(
-              title: 'Ana ekran widget’ı',
+              title: 'Ana Ekran Widget’ı',
               children: const [
                 Text(
                   'Ana ekranda boş bir alana basılı tutun. '
@@ -353,7 +355,7 @@ class _SettingsPageState extends State<SettingsPage>
               onPressed: _busy ? null : widget.onSignOut,
               icon: const Icon(Icons.logout),
               label: Text(
-                widget.isSigningOut ? 'Çıkış yapılıyor…' : 'Çıkış yap',
+                widget.isSigningOut ? 'Çıkış yapılıyor…' : 'Çıkış Yap',
               ),
             ),
             const SizedBox(height: 12),
@@ -363,7 +365,7 @@ class _SettingsPageState extends State<SettingsPage>
               ),
               onPressed: _busy ? null : _openDeleteAccount,
               icon: const Icon(Icons.delete_forever_outlined),
-              label: const Text('Hesabımı sil'),
+              label: const Text('Hesabımı Sil'),
             ),
           ],
         );

@@ -119,7 +119,7 @@ class _OverviewPageState extends State<OverviewPage>
                     });
                   },
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Yeniden dene'),
+                  label: const Text('Yeniden Dene'),
                 ),
               ],
             ),
@@ -194,7 +194,7 @@ class _OverviewPageState extends State<OverviewPage>
                 children: [
                   const _CardHeading(
                     icon: Icons.water_drop_outlined,
-                    title: 'Son ölçüm',
+                    title: 'Son Ölçüm',
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -202,7 +202,7 @@ class _OverviewPageState extends State<OverviewPage>
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        latest == null ? 'Ölçüm yok' : '${latest.valueMgDl}',
+                        latest == null ? 'Ölçüm Yok' : '${latest.valueMgDl}',
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w700,
@@ -260,20 +260,20 @@ class _OverviewPageState extends State<OverviewPage>
             ),
             const SizedBox(height: 8),
             Text(
-              '$rangeLabel • ${selected.length} ölçüm',
+              '$rangeLabel • ${selected.length} Ölçüm',
               style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             _ResponsivePair(
               first: _AverageCard(
-                title: 'Açlık ort.',
+                title: 'Açlık Ort.',
                 icon: Icons.water_drop_outlined,
                 value: _average(fasting),
                 count: fasting.length,
                 onTap: widget.onOpenRecords,
               ),
               second: _AverageCard(
-                title: 'Tokluk ort.',
+                title: 'Tokluk Ort.',
                 icon: Icons.restaurant_outlined,
                 value: _average(postMeal),
                 count: postMeal.length,
@@ -288,7 +288,7 @@ class _OverviewPageState extends State<OverviewPage>
                 children: [
                   const _CardHeading(
                     icon: Icons.query_stats,
-                    title: 'Genel ortalama',
+                    title: 'Genel Ortalama',
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -296,7 +296,7 @@ class _OverviewPageState extends State<OverviewPage>
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        selected.isEmpty ? 'Kayıt yok' : _average(selected),
+                        selected.isEmpty ? 'Kayıt Yok' : _average(selected),
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
@@ -315,7 +315,7 @@ class _OverviewPageState extends State<OverviewPage>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${selected.length} ölçüm • Açlık ve tokluk birlikte',
+                    '${selected.length} Ölçüm • Açlık ve Tokluk Birlikte',
                     style: const TextStyle(
                       color: AppColors.muted,
                       fontSize: 12,
@@ -333,11 +333,11 @@ class _OverviewPageState extends State<OverviewPage>
                         ),
                         _MeasurementCountChip(
                           level: GlucoseLevel.high,
-                          label: 'Hedef dışı · $cautionCount',
+                          label: 'Hedef Dışı · $cautionCount',
                         ),
                         _MeasurementCountChip(
                           level: GlucoseLevel.veryHigh,
-                          label: 'Düşük / çok yüksek · $alertCount',
+                          label: 'Düşük / Çok Yüksek · $alertCount',
                         ),
                       ],
                     ),
@@ -371,7 +371,7 @@ class _OverviewPageState extends State<OverviewPage>
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       children: [
         Text(
-          'Günlük takibiniz',
+          'Günlük Takibiniz',
           style: Theme.of(context).textTheme.titleLarge
               ?.copyWith(color: AppColors.text, fontWeight: FontWeight.w700),
         ),
@@ -541,7 +541,7 @@ class _AverageCard extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            '$count ölçüm',
+            '$count Ölçüm',
             style: const TextStyle(color: AppColors.muted, fontSize: 12),
           ),
         ],
