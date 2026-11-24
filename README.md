@@ -41,8 +41,10 @@ are still pending.
 - Account deletion with password verification and explicit confirmation.
 - Resumable deletion flow for interrupted operations.
 
-The account-deletion flow is implemented. Successful deletion and
-interruption-recovery testing with a disposable account remain pending.
+Successful account deletion has been manually checked with a disposable
+account, including Authentication removal, application-data cleanup,
+widget cleanup, and cancellation of local notifications on the tested
+device. Interrupted-deletion recovery remains a separate pending test.
 
 ### 🩸 Glucose Tracking
 
@@ -52,6 +54,21 @@ interruption-recovery testing with a disposable account remain pending.
 - Record editing and deletion.
 - Date-range and measurement-type filters.
 - Tabular records and measurement details.
+- Automatic classification based on the measurement value and type.
+- Green, orange, and red value, row, and status-label styling.
+- Explicit labels for target-range, below-target, low, very low, high,
+  and very high readings.
+- Grouped measurement counts for the selected date range and type filter.
+- Existing records classified automatically without rewriting Firestore data.
+- Boundary-value tests for the classification rules.
+
+Colors and labels use application reference thresholds. They are not
+personalized treatment targets and may differ from targets set by a
+healthcare professional. The classification is calculated centrally in
+`GlucoseLevel.evaluate` in `glucose_reading.dart`.
+
+Grouped counts describe the entered measurements. They do not represent
+continuous glucose monitoring (CGM) time in range.
 
 ### 🧪 HbA1c Tracking
 
@@ -87,17 +104,22 @@ complete historical log of unanswered reminder occurrences.
 
 ### 📊 Dashboard
 
-- Latest glucose measurement.
+- Latest glucose measurement with its level color and status label.
 - Daily, weekly, and monthly measurement summaries.
 - Separate fasting and post-meal averages.
 - Combined glucose average.
 - Glucose chart with a measurement-average reference line.
+- Measurement points colored and shaped by their classification group.
+- Classification counts for the selected summary period.
 - Latest HbA1c result.
 - Next planned reminder with its date and time.
+- Snoozed status when a valid snoozed notification is the next reminder.
 - Today's insulin administration records.
 - Quick navigation through dashboard cards.
 
-Averages are calculated from user-entered records.
+Averages are calculated from user-entered records and retain neutral
+styling. Individual reading classifications are not applied to averages,
+since an average can hide both low and high measurements.
 
 ### 🔔 Reminders and Notifications
 
@@ -110,21 +132,41 @@ Averages are calculated from user-entered records.
 - Approximate scheduling fallback when exact scheduling is unavailable.
 - Notification permission controls and test notifications.
 - Explicit 24-hour display for upcoming reminder times.
-- Notification taps open the corresponding record-entry form.
-- Account and current-reminder validation before opening a form.
-- Ten-minute snoozing through a notification action.
+- Notification interactions open the corresponding glucose-entry form
+  or insulin tracking screen.
+- Account and current-reminder validation before record actions.
+- Insulin notification buttons for completed, skipped, and snooze actions.
+- Completed insulin actions open the administration-entry flow;
+  a completion is recorded only after the entry is saved.
+- Skipped actions use the insulin plan-confirmation flow.
+- Ten-minute snoozing directly from the notification without selecting
+  a plan date or providing a second confirmation.
+- Snooze time calculated from when the scheduling operation runs.
+- Existing valid insulin snoozes retain their scheduled time when
+  the same pending operation is encountered again.
+- Consumed Android notification interactions are not replayed after
+  a Dart hot restart in the same Activity.
 - Snoozing preserves the reminder's regular recurrence.
 
 Notification interactions do not automatically create glucose or insulin
 administration records.
 
-Completed/skipped insulin tracking currently works from the in-app tracking
-screen. Connecting those actions to notification buttons is a planned step.
+Insulin record actions retain plan-date confirmation when the notification
+is not already linked to a specific occurrence. Snoozing a reminder alone
+does not require choosing a date and does not mark a plan as completed or
+skipped. Previously linked snoozes preserve their occurrence association.
+
+The dashboard and widget compare valid snoozes with normal recurrences and
+show the earliest upcoming candidate. A snoozed reminder does not replace
+an earlier reminder from another schedule.
 
 ### 🏠 Android Home-Screen Widget
 
 - Compact three-column layout.
-- Latest glucose measurement, type, and measurement time.
+- Latest glucose measurement, type, measurement time, and level label.
+- Latest-reading color derived from the same Dart classification used
+  by the records and dashboard screens.
+- Neutral daily-average styling.
 - Today's combined glucose average and measurement count.
 - Next planned reminder, including recognized snoozed reminders.
 - Tap-to-open application behavior.
@@ -146,6 +188,23 @@ and displayed information may remain unchanged until the next refresh.
 - Links to Android notification settings.
 - Home-screen widget instructions.
 - Sign-out and account-deletion entry points.
+
+### 🔤 Typography and Readability
+
+- Centralized application text sizes and Material text styles in
+  `lib/core/theme/app_typography.dart`.
+- Theme integration for headings, body text, buttons, form decorations,
+  navigation labels, and list tiles.
+- Screen-specific font sizes reference shared typography constants.
+- Larger captions, labels, card titles, and measurement values.
+- Chart-axis text follows the device text-scaling setting.
+- Main app-bar height adapts to its scaled title and subtitle.
+- Native widget font sizes centralized separately in
+  `android/app/src/main/res/values/widget_typography.xml`.
+
+Android widgets use native layouts, so their font dimensions are managed
+separately from Flutter's typography. Broader large-text and physical-device
+layout testing remains pending.
 
 ## 🛠️ Technology Stack
 
@@ -176,6 +235,8 @@ lib/
 ├── core/
 │   ├── notifications/
 │   └── theme/
+│       ├── app_theme.dart
+│       └── app_typography.dart
 └── features/
     ├── auth/
     ├── glucose/
@@ -193,6 +254,9 @@ android/app/src/main/
 └── res/
     ├── drawable/
     ├── layout/
+    │   └── diabetes_widget.xml
+    ├── values/
+    │   └── widget_typography.xml
     └── xml/
 
 test/
@@ -205,7 +269,7 @@ where applicable.
 
 ## 🗄️ Data Organization
 
-Application records are stored under the authenticated user's document:
+Application records are stored under paths scoped to the authenticated user:
 
 ```text
 users/{userId}/
@@ -226,8 +290,16 @@ account_deletions/{userId}
 - Rules validate permitted fields, timestamps, and linked records.
 - An account-deletion marker blocks new application-record writes.
 
+Firebase Authentication stores the account and its basic profile.
+Registration does not automatically create a Firestore `users/{userId}`
+profile document. An account with no application records may therefore
+appear in Authentication before its user path is visible in the Firestore
+console. Subcollection records do not require fields on the parent document.
+
 Reminder configurations are stored in Firestore, while notification
-schedules are installed locally on each device.
+schedules are installed locally on each device. Reading classification is
+computed from the measurement value and type rather than stored as a
+separate Firestore field.
 
 ### Account Deletion
 
@@ -341,7 +413,7 @@ and sign in to populate its data.
 Format the source code:
 
 ```bash
-dart format lib
+dart format lib test
 ```
 
 Run static analysis:
@@ -356,6 +428,15 @@ Run automated tests:
 flutter test
 ```
 
+Classification boundary tests can also be run independently:
+
+```bash
+flutter test test/glucose_level_test.dart
+```
+
+Changes to Kotlin code or Android resources require stopping and rebuilding
+the application; a Flutter hot restart alone does not apply those changes.
+
 ### Manual Validation
 
 Manual emulator checks have covered:
@@ -366,10 +447,23 @@ Manual emulator checks have covered:
 - Profile editing and password changes.
 - In-app completed/skipped insulin tracking.
 - Rejection of account deletion with an incorrect password.
+- Successful account deletion using a disposable account.
+- Authentication and application-data removal after deletion.
+- Widget and current-device notification cleanup after deletion.
+- Retention of the minimal account-deletion marker.
+- Switching accounts without displaying the previous user's records.
+- Consistent glucose classification across records, details, dashboard,
+  and the home-screen widget.
+- Classification updates after editing a measurement.
+- Snoozed reminder display on the dashboard and widget.
+- Preservation of a snooze time across hot restart.
+- Settings navigation after correcting the ListTile Material surface.
+
+These are manual checks on the tested setup, not a complete device or
+security test matrix.
 
 Still pending:
 
-- Successful account deletion using a disposable account.
 - Interrupted account-deletion recovery.
 - Broader physical-device testing.
 - Reboot, time-zone, and daylight-saving scenarios.
@@ -388,12 +482,16 @@ notification delivery or all Firestore access-control behavior.
 - Force-stopping the application can prevent notification delivery.
 - Remote reminder changes are synchronized when the application connects
   to Firestore; they are not instantly pushed to a closed application.
-- Upcoming reminder cards show the planned recurrence, not proof of delivery.
+- Upcoming reminder cards show the earliest calculated recurrence or valid
+  locally scheduled snooze, not proof of notification delivery.
+- Snoozes and their displayed status are local to the device.
 - Opening a record form from a notification requires connectivity to
   validate the current reminder.
 - Initial account-access verification requires a server connection.
 - Linked insulin completion and skip actions require connectivity.
 - Widget updates may be delayed while the application is closed.
+- Older widget snapshots without classification metadata retain neutral
+  measurement styling until refreshed by the updated application.
 - Account deletion is resumable but is not one atomic operation across
   Firebase Authentication and all Firestore collections.
 
@@ -401,24 +499,35 @@ notification delivery or all Firestore access-control behavior.
 
 - [x] Firebase authentication and password reset.
 - [x] Glucose tracking and record management.
+- [x] Centralized glucose classification and colored status labels.
+- [x] Classification counts and colored chart points.
+- [x] Latest-reading classification on the dashboard and Android widget.
+- [x] Glucose classification boundary tests.
 - [x] HbA1c tracking.
 - [x] Insulin administration records.
 - [x] Compact dashboard and glucose chart.
 - [x] Recurring reminders and local notifications.
 - [x] Upcoming reminder display.
 - [x] Navigation from notifications to record-entry forms.
-- [x] Ten-minute reminder snoozing.
+- [x] Direct ten-minute reminder snoozing without plan-date selection.
+- [x] Snooze status on the dashboard and Android widget.
+- [x] Protection against replaying consumed notification actions on hot restart.
 - [x] Compact Android home-screen widget.
 - [x] Profile editing and password changes.
 - [x] Notification permission settings.
 - [x] In-app completed/skipped insulin reminder tracking.
 - [x] Resumable account-deletion implementation.
-- [ ] Successful account-deletion and interruption-recovery validation.
-- [ ] Notification actions linked to insulin completion/skip tracking.
+- [x] Successful account-deletion validation with a disposable account.
+- [x] Notification actions linked to insulin completion/skip tracking flows.
+- [x] Centralized Flutter and native-widget typography.
+- [x] Settings ListTile Material rendering fix.
+- [ ] Interrupted account-deletion recovery validation.
 - [ ] Historical tracking of unanswered insulin reminder occurrences.
 - [ ] Additional notification and widget privacy controls.
 - [ ] Broader physical-device, reboot, and time-zone testing.
 - [ ] Expanded automated tests, including Firestore access rules.
+- [ ] Broader small-screen and large-text layout validation.
+- [ ] Optional record export to CSV or PDF.
 - [ ] Release signing and Google Play preparation.
 
 ## ℹ️ Scope
@@ -427,7 +536,9 @@ Track Diabetes is a personal tracking and reminder application.
 
 It does not calculate insulin doses, recommend treatment, or provide
 medical diagnoses. Measurement summaries are calculated from records
-entered by the user.
+entered by the user. Colors and level labels are reference classifications,
+not diagnoses or confirmation that a measurement is safe for a particular
+individual.
 
 Completed and skipped states reflect user-entered information; they do
 not independently verify whether an injection occurred.
