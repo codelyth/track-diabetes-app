@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'glucose_detail_sheet.dart';
-
 import '../../../core/theme/app_theme.dart';
 import '../data/glucose_repository.dart';
 import '../domain/glucose_reading.dart';
+import 'glucose_detail_sheet.dart';
+import 'glucose_level_badge.dart';
 
 enum _Period {
   today('Bugün'),
@@ -137,6 +137,33 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
       ..showSnackBar(const SnackBar(content: Text('Ölçüm silindi.')));
   }
 
+  Widget _buildCounts(List<GlucoseReading> readings) {
+    final targetCount = readings.where((reading) {
+      return reading.level.severity == GlucoseSeverity.target;
+    }).length;
+
+    final cautionCount = readings.where((reading) {
+      return reading.level.severity == GlucoseSeverity.caution;
+    }).length;
+
+    final alertCount = readings.where((reading) {
+      return reading.level.severity == GlucoseSeverity.alert;
+    }).length;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _CountChip(level: GlucoseLevel.inTarget, text: '$targetCount hedefte'),
+        _CountChip(level: GlucoseLevel.high, text: '$cautionCount hedef dışı'),
+        _CountChip(
+          level: GlucoseLevel.veryHigh,
+          text: '$alertCount düşük / çok yüksek',
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final range = _range;
@@ -232,7 +259,8 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Tarih veya ölçüm türü filtresini değiştirebilirsiniz.',
+                      'Tarih veya ölçüm türü filtresini '
+                      'değiştirebilirsiniz.',
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -247,6 +275,18 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                   '${readings.length} ölçüm • '
                   '${_type?.label ?? 'Tüm türler'}',
                   style: const TextStyle(color: AppColors.muted),
+                ),
+                const SizedBox(height: 12),
+                _buildCounts(readings),
+                const SizedBox(height: 8),
+                const Text(
+                  'Sayılar seçili aralıktaki kayıtları gösterir. '
+                  'Hedef aralıkta geçirilen süreyi göstermez.',
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 11,
+                    height: 1.5,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -266,6 +306,8 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                           child: DataTable(
                             horizontalMargin: 12,
                             columnSpacing: 16,
+                            dataRowMinHeight: 56,
+                            dataRowMaxHeight: 80,
                             showCheckboxColumn: false,
                             headingRowColor: const WidgetStatePropertyAll(
                               AppColors.lavender,
@@ -275,11 +317,16 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                               DataColumn(label: Text('Saat')),
                               DataColumn(label: Text('Tür')),
                               DataColumn(label: Text('mg/dL'), numeric: true),
+                              DataColumn(label: Text('Seviye')),
                             ],
                             rows: readings.map((reading) {
                               final date = reading.measuredAt.toLocal();
+                              final level = reading.level;
 
                               return DataRow(
+                                color: WidgetStatePropertyAll(
+                                  level.backgroundColor,
+                                ),
                                 onSelectChanged: (_) => _showDetails(reading),
                                 cells: [
                                   DataCell(Text(_date(date))),
@@ -288,9 +335,17 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                                   DataCell(
                                     Text(
                                       '${reading.valueMgDl}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
+                                        color: level.color,
                                         fontWeight: FontWeight.w700,
+                                        fontSize: 16,
                                       ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    GlucoseLevelBadge(
+                                      level: level,
+                                      compact: true,
                                     ),
                                   ),
                                 ],
@@ -308,11 +363,39 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                   'Tablo sığmazsa yatay kaydırabilirsiniz.',
                   style: TextStyle(color: AppColors.muted, fontSize: 12),
                 ),
+                const SizedBox(height: 12),
+                const GlucoseRangeNote(),
               ],
             );
           },
         ),
       ],
+    );
+  }
+}
+
+class _CountChip extends StatelessWidget {
+  const _CountChip({required this.level, required this.text});
+
+  final GlucoseLevel level;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: level.backgroundColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: level.color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

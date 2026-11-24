@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../domain/glucose_reading.dart';
+import 'glucose_level_badge.dart';
 
 class GlucoseSummaryChart extends StatelessWidget {
   const GlucoseSummaryChart({super.key, required this.readings});
@@ -32,6 +33,18 @@ class GlucoseSummaryChart extends StatelessWidget {
         sorted.fold<double>(0, (sum, reading) => sum + reading.valueMgDl) /
         sorted.length;
 
+    final targetCount = sorted.where((reading) {
+      return reading.level.severity == GlucoseSeverity.target;
+    }).length;
+
+    final cautionCount = sorted.where((reading) {
+      return reading.level.severity == GlucoseSeverity.caution;
+    }).length;
+
+    final alertCount = sorted.where((reading) {
+      return reading.level.severity == GlucoseSeverity.alert;
+    }).length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -39,6 +52,9 @@ class GlucoseSummaryChart extends StatelessWidget {
           label:
               '${sorted.length} kayıtlı ölçüm. '
               'Ortalama ${average.toStringAsFixed(1)} mg/dL. '
+              '$targetCount hedefte, '
+              '$cautionCount turuncu grupta, '
+              '$alertCount düşük veya çok yüksek grupta. '
               'Ayrıntılar Kayıtlar ekranında.',
           child: ExcludeSemantics(
             child: SizedBox(
@@ -54,12 +70,30 @@ class GlucoseSummaryChart extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        const Wrap(
-          spacing: 16,
+        Wrap(
+          spacing: 12,
           runSpacing: 6,
           children: [
-            _ChartLegend(dashed: false, label: 'Ölçümler'),
-            _ChartLegend(dashed: true, label: 'Ortalama'),
+            _ChartLegend(
+              label: 'Hedefte',
+              color: GlucoseLevel.inTarget.color,
+              icon: Icons.circle,
+            ),
+            _ChartLegend(
+              label: 'Hedef dışı',
+              color: GlucoseLevel.high.color,
+              icon: Icons.diamond,
+            ),
+            _ChartLegend(
+              label: 'Düşük / çok yüksek',
+              color: GlucoseLevel.veryHigh.color,
+              icon: Icons.square,
+            ),
+            const _ChartLegend(
+              label: 'Ortalama',
+              color: AppColors.primary,
+              dashed: true,
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -75,27 +109,34 @@ class GlucoseSummaryChart extends StatelessWidget {
 }
 
 class _ChartLegend extends StatelessWidget {
-  const _ChartLegend({required this.dashed, required this.label});
+  const _ChartLegend({
+    required this.label,
+    required this.color,
+    this.icon = Icons.circle,
+    this.dashed = false,
+  });
 
-  final bool dashed;
   final String label;
+  final Color color;
+  final IconData icon;
+  final bool dashed;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          dashed ? '┄' : '●',
-          style: const TextStyle(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(width: 6),
+        if (dashed)
+          Text(
+            '┄',
+            style: TextStyle(color: color, fontWeight: FontWeight.w700),
+          )
+        else
+          Icon(icon, size: 10, color: color),
+        const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+          style: const TextStyle(color: AppColors.muted, fontSize: 11),
         ),
       ],
     );
@@ -144,6 +185,50 @@ class _GlucoseChartPainter extends CustomPainter {
     );
 
     painter.dispose();
+  }
+
+  void _drawPoint(Canvas canvas, Offset point, GlucoseReading reading) {
+    final level = reading.level;
+    final fill = Paint()..color = level.color;
+    final border = Paint()..color = Colors.white;
+
+    switch (level.severity) {
+      case GlucoseSeverity.target:
+        canvas.drawCircle(point, 5, border);
+        canvas.drawCircle(point, 3.5, fill);
+        break;
+
+      case GlucoseSeverity.caution:
+        final outer = Path()
+          ..moveTo(point.dx, point.dy - 6)
+          ..lineTo(point.dx + 6, point.dy)
+          ..lineTo(point.dx, point.dy + 6)
+          ..lineTo(point.dx - 6, point.dy)
+          ..close();
+
+        final inner = Path()
+          ..moveTo(point.dx, point.dy - 4.5)
+          ..lineTo(point.dx + 4.5, point.dy)
+          ..lineTo(point.dx, point.dy + 4.5)
+          ..lineTo(point.dx - 4.5, point.dy)
+          ..close();
+
+        canvas.drawPath(outer, border);
+        canvas.drawPath(inner, fill);
+        break;
+
+      case GlucoseSeverity.alert:
+        canvas.drawRect(
+          Rect.fromCenter(center: point, width: 10, height: 10),
+          border,
+        );
+
+        canvas.drawRect(
+          Rect.fromCenter(center: point, width: 7, height: 7),
+          fill,
+        );
+        break;
+    }
   }
 
   @override
@@ -244,12 +329,8 @@ class _GlucoseChartPainter extends CustomPainter {
 
     canvas.drawPath(path, linePaint);
 
-    final pointPaint = Paint()..color = AppColors.primary;
-    final pointBorder = Paint()..color = Colors.white;
-
-    for (final point in points) {
-      canvas.drawCircle(point, 4.5, pointBorder);
-      canvas.drawCircle(point, 3, pointPaint);
+    for (var index = 0; index < readings.length; index++) {
+      _drawPoint(canvas, points[index], readings[index]);
     }
 
     final firstDate = readings.first.measuredAt.toLocal();

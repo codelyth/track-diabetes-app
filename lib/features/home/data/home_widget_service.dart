@@ -26,8 +26,11 @@ class HomeWidgetService with WidgetsBindingObserver {
   final _notifications = FlutterLocalNotificationsPlugin();
 
   StreamSubscription<User?>? _authSubscription;
+
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _glucoseSubscription;
+
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _todaySubscription;
+
   StreamSubscription<List<Reminder>>? _reminderSubscription;
 
   Timer? _timer;
@@ -135,16 +138,23 @@ class HomeWidgetService with WidgetsBindingObserver {
             if (!_isCurrent(generation, userId)) return;
 
             try {
-              _reading = snapshot.docs.isEmpty
+              final reading = snapshot.docs.isEmpty
                   ? null
                   : GlucoseReading.fromDocument(snapshot.docs.first);
 
+              // Geçersiz değerleri widgetta seviye olarak göstermeyiz.
+              if (reading != null && reading.valueMgDl <= 0) {
+                throw const FormatException('Ölçüm değeri pozitif olmalıdır.');
+              }
+
+              _reading = reading;
               _glucoseReady = true;
               _glucoseError = false;
             } catch (error) {
               _reading = null;
               _glucoseReady = true;
               _glucoseError = true;
+
               debugPrint('Widget ölçümü okunamadı: $error');
             }
 
@@ -197,7 +207,6 @@ class HomeWidgetService with WidgetsBindingObserver {
     final start = DateTime(now.year, now.month, now.day);
     final end = DateTime(now.year, now.month, now.day + 1);
 
-    // Saat dilimi değişirse sorgu sınırları da değişir.
     final dayKey =
         '${start.millisecondsSinceEpoch}:${end.millisecondsSinceEpoch}';
 
@@ -307,11 +316,14 @@ class HomeWidgetService with WidgetsBindingObserver {
     final userId = _userId;
     final reading = _reading;
 
+    final level = forceClear ? null : reading?.level;
+
     final activeReminders = _reminders
         .where((reminder) => reminder.isEnabled)
         .toList();
 
     final snapshot = <String, dynamic>{
+      'schemaVersion': 2,
       'signedIn': !forceClear && userId != null,
       'glucoseReady': _glucoseReady,
       'glucoseError': _glucoseError,
@@ -325,6 +337,9 @@ class HomeWidgetService with WidgetsBindingObserver {
               'valueMgDl': reading.valueMgDl,
               'type': reading.type.code,
               'measuredAtMs': reading.measuredAt.millisecondsSinceEpoch,
+              'levelCode': level?.code,
+              'levelLabel': level?.label,
+              'severity': level?.severity.name,
             },
       'todayReadings': forceClear
           ? <Map<String, dynamic>>[]

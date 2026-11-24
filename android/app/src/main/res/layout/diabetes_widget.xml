@@ -95,7 +95,7 @@
                 android:textSize="10sp"
                 android:textColor="#706779"
                 android:includeFontPadding="false"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:ellipsize="end" />
 
             <TextView

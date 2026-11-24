@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../glucose/data/glucose_repository.dart';
 import '../../glucose/domain/glucose_reading.dart';
+import '../../glucose/presentation/glucose_level_badge.dart';
 import '../../glucose/presentation/glucose_summary_chart.dart';
 import '../../hba1c/presentation/latest_hba1c_card.dart';
 import '../../insulin/presentation/today_insulin_card.dart';
@@ -137,6 +138,7 @@ class _OverviewPageState extends State<OverviewPage>
         final readings = snapshot.data!;
         final latest = readings.isEmpty ? null : readings.first;
         final latestDate = latest?.measuredAt.toLocal();
+        final latestLevel = latest?.level;
 
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
@@ -165,6 +167,18 @@ class _OverviewPageState extends State<OverviewPage>
             .where((reading) => reading.type == GlucoseType.postMeal)
             .toList(growable: false);
 
+        final targetCount = selected.where((reading) {
+          return reading.level.severity == GlucoseSeverity.target;
+        }).length;
+
+        final cautionCount = selected.where((reading) {
+          return reading.level.severity == GlucoseSeverity.caution;
+        }).length;
+
+        final alertCount = selected.where((reading) {
+          return reading.level.severity == GlucoseSeverity.alert;
+        }).length;
+
         final rangeLabel = _period == _SummaryPeriod.daily
             ? _date(today)
             : '${_date(start)} – ${_date(today)}';
@@ -173,7 +187,7 @@ class _OverviewPageState extends State<OverviewPage>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _DashboardCard(
-              color: AppColors.lavender,
+              color: latestLevel?.backgroundColor ?? AppColors.lavender,
               onTap: widget.onOpenRecords,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,24 +203,28 @@ class _OverviewPageState extends State<OverviewPage>
                     children: [
                       Text(
                         latest == null ? 'Ölçüm yok' : '${latest.valueMgDl}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.text,
+                          color: latestLevel?.color ?? AppColors.text,
                         ),
                       ),
                       if (latest != null)
-                        const Text(
+                        Text(
                           'mg/dL',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.text,
+                            color: latestLevel?.color ?? AppColors.text,
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 5),
+                  if (latestLevel != null) ...[
+                    const SizedBox(height: 8),
+                    GlucoseLevelBadge(level: latestLevel, compact: true),
+                  ],
+                  const SizedBox(height: 8),
                   Text(
                     latest == null || latestDate == null
                         ? 'İlk ölçümünüzü Kayıtlar bölümünden ekleyin.'
@@ -303,6 +321,37 @@ class _OverviewPageState extends State<OverviewPage>
                       fontSize: 12,
                     ),
                   ),
+                  if (selected.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _MeasurementCountChip(
+                          level: GlucoseLevel.inTarget,
+                          label: 'Hedefte · $targetCount',
+                        ),
+                        _MeasurementCountChip(
+                          level: GlucoseLevel.high,
+                          label: 'Hedef dışı · $cautionCount',
+                        ),
+                        _MeasurementCountChip(
+                          level: GlucoseLevel.veryHigh,
+                          label: 'Düşük / çok yüksek · $alertCount',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Kayıt sayılarıdır; hedef aralıkta geçirilen '
+                      'süreyi göstermez.',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 10,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   GlucoseSummaryChart(readings: selected),
                 ],
@@ -496,6 +545,32 @@ class _AverageCard extends StatelessWidget {
             style: const TextStyle(color: AppColors.muted, fontSize: 12),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MeasurementCountChip extends StatelessWidget {
+  const _MeasurementCountChip({required this.level, required this.label});
+
+  final GlucoseLevel level;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: level.backgroundColor,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: level.color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

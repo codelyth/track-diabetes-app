@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetProvider
 import org.json.JSONObject
@@ -37,6 +38,9 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
     private val headerFormatter =
         DateTimeFormatter.ofPattern("d MMMM", locale)
 
+    private val neutralColor = Color.parseColor("#211632")
+    private val mutedColor = Color.parseColor("#706779")
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -61,7 +65,12 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                 )
 
                 if (raw != null) {
-                    bindSnapshot(views, JSONObject(raw), now, zone)
+                    bindSnapshot(
+                        views,
+                        JSONObject(raw),
+                        now,
+                        zone
+                    )
                 }
             } catch (_: Exception) {
                 setDefaults(views, now)
@@ -110,6 +119,17 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
         views.setTextViewText(R.id.widget_glucose_type, "Giriş yapın")
         views.setTextViewText(R.id.widget_glucose_date, "")
 
+        // Çıkış, boş kayıt veya hata durumunda eski renk kalmasın.
+        views.setTextColor(
+            R.id.widget_glucose_value,
+            neutralColor
+        )
+
+        views.setTextColor(
+            R.id.widget_glucose_type,
+            mutedColor
+        )
+
         views.setTextViewText(R.id.widget_average_value, "—")
         views.setTextViewText(R.id.widget_average_count, "Giriş yapın")
 
@@ -153,6 +173,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                     R.id.widget_glucose_type,
                     "Veri alınamadı"
                 )
+
                 views.setTextViewText(
                     R.id.widget_footer,
                     "Ölçümleri görmek için uygulamayı açın."
@@ -164,6 +185,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                     R.id.widget_glucose_type,
                     "Yükleniyor"
                 )
+
                 views.setTextViewText(
                     R.id.widget_footer,
                     "Ölçümler yükleniyor"
@@ -178,6 +200,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                         R.id.widget_glucose_type,
                         "Henüz ölçüm yok"
                     )
+
                     return
                 }
 
@@ -185,7 +208,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                     reading.getLong("measuredAtMs")
                 ).atZone(zone)
 
-                val label = when (reading.optString("type")) {
+                val typeLabel = when (reading.optString("type")) {
                     "fasting" -> "Açlık"
                     "postMeal" -> "Tokluk"
                     else -> "Ölçüm"
@@ -198,8 +221,52 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
 
                 views.setTextViewText(
                     R.id.widget_glucose_type,
-                    label
+                    typeLabel
                 )
+
+                // Sayısal eşikler burada tekrar hesaplanmaz.
+                // Seviye Dart tarafından ölçümle birlikte gönderilir.
+                val levelCode = reading.optString("levelCode", "")
+                val levelLabel = reading.optString("levelLabel", "")
+                val severity = reading.optString("severity", "")
+
+                val knownLevel = levelCode in setOf(
+                    "veryLow",
+                    "low",
+                    "belowTarget",
+                    "inTarget",
+                    "high",
+                    "veryHigh"
+                )
+
+                val levelColor = when (severity) {
+                    "target" -> Color.parseColor("#18764A")
+                    "caution" -> Color.parseColor("#A65500")
+                    "alert" -> Color.parseColor("#B42318")
+                    else -> null
+                }
+
+                if (
+                    knownLevel &&
+                    levelLabel.isNotBlank() &&
+                    levelLabel != "null" &&
+                    levelColor != null
+                ) {
+                    views.setTextColor(
+                        R.id.widget_glucose_value,
+                        levelColor
+                    )
+
+                    views.setTextColor(
+                        R.id.widget_glucose_type,
+                        levelColor
+                    )
+
+                    views.setTextViewText(
+                        R.id.widget_glucose_type,
+                        "$typeLabel · $levelLabel"
+                    )
+                }
 
                 views.setTextViewText(
                     R.id.widget_glucose_date,
@@ -229,6 +296,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                 R.id.widget_average_count,
                 "Veri alınamadı"
             )
+
             return
         }
 
@@ -237,6 +305,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                 R.id.widget_average_count,
                 "Yükleniyor"
             )
+
             return
         }
 
@@ -253,8 +322,6 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                     reading.getLong("measuredAtMs")
                 ).atZone(zone)
 
-                // Gece yarısından sonra önceki günün ortalamasını
-                // bugünün değeri olarak göstermeyiz.
                 if (measuredAt.toLocalDate() != now.toLocalDate()) {
                     continue
                 }
@@ -273,6 +340,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                 R.id.widget_average_count,
                 "Henüz ölçüm yok"
             )
+
             return
         }
 
@@ -298,6 +366,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                 R.id.widget_reminder_type,
                 "Veri alınamadı"
             )
+
             return
         }
 
@@ -306,6 +375,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                 R.id.widget_reminder_type,
                 "Yükleniyor"
             )
+
             return
         }
 
@@ -316,6 +386,7 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
                 R.id.widget_reminder_type,
                 "Aktif plan yok"
             )
+
             return
         }
 
@@ -431,8 +502,8 @@ class DiabetesWidgetProvider : HomeWidgetProvider() {
 
     private fun typeLabel(type: String): String {
         return when (type) {
-            "fasting" -> "Açlık ölçümü"
-            "postMeal" -> "Tokluk ölçümü"
+            "fasting" -> "Açlık Ölçümü"
+            "postMeal" -> "Tokluk Ölçümü"
             "insulin" -> "İnsülin"
             else -> "Hatırlatıcı"
         }

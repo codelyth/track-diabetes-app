@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../data/glucose_repository.dart';
 import '../domain/glucose_reading.dart';
 import 'add_glucose_screen.dart';
+import 'glucose_level_badge.dart';
 
 class GlucoseDetailSheet extends StatefulWidget {
   const GlucoseDetailSheet({
@@ -51,8 +52,6 @@ class _GlucoseDetailSheetState extends State<GlucoseDetailSheet> {
 
       final messenger = ScaffoldMessenger.of(context);
 
-      // Eski bilgileri gösteren detay penceresini kapatır.
-      // false: Kayıtlar sayfasındaki "silindi" mesajını tetiklemez.
       Navigator.of(context).pop(false);
 
       messenger
@@ -135,6 +134,7 @@ class _GlucoseDetailSheetState extends State<GlucoseDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final reading = widget.reading;
+    final level = reading.level;
     final date = reading.measuredAt.toLocal();
 
     final dateLabel = '${_two(date.day)}.${_two(date.month)}.${date.year}';
@@ -155,15 +155,38 @@ class _GlucoseDetailSheetState extends State<GlucoseDetailSheet> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 20),
-              Text(
-                '${reading.valueMgDl} mg/dL',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: level.backgroundColor,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${reading.valueMgDl} mg/dL',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: level.color,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    GlucoseLevelBadge(level: level),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${reading.type.label} • $dateLabel • $timeLabel',
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Text('${reading.type.label} • $dateLabel • $timeLabel'),
+              const SizedBox(height: 16),
+              const GlucoseRangeNote(),
               const SizedBox(height: 24),
               Text('Not', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
