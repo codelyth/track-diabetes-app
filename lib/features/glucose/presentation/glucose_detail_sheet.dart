@@ -151,7 +151,7 @@ class _GlucoseDetailSheetState extends State<GlucoseDetailSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Ölçüm detayı',
+                'Ölçüm Detayı',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 20),
@@ -214,7 +214,7 @@ class _GlucoseDetailSheetState extends State<GlucoseDetailSheet> {
                   foregroundColor: Theme.of(context).colorScheme.error,
                 ),
                 icon: const Icon(Icons.delete_outline),
-                label: Text(_isDeleting ? 'Siliniyor...' : 'Kaydı sil'),
+                label: Text(_isDeleting ? 'Siliniyor...' : 'Kaydı Sil'),
               ),
               if (_isDeleting) ...[
                 const SizedBox(height: 12),

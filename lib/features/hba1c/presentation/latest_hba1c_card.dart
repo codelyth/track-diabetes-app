@@ -86,14 +86,14 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Yüklenemedi'),
+                        const Text('Yüklenemedi.'),
                         TextButton(
                           onPressed: () {
                             setState(() {
                               _resultsStream = _repository.watchResults();
                             });
                           },
-                          child: const Text('Yeniden dene'),
+                          child: const Text('Yeniden Dene'),
                         ),
                       ],
                     );
@@ -114,7 +114,7 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                     children: [
                       Text(
                         latest == null
-                            ? 'Sonuç yok'
+                            ? 'Sonuç Yok'
                             : '%${latest.valuePercent.toString().replaceAll('.', ',')}',
                         style: const TextStyle(
                           fontSize: AppTypography.metricCompactSize,
@@ -125,7 +125,7 @@ class _LatestHba1cCardState extends State<LatestHba1cCard> {
                       const SizedBox(height: 5),
                       Text(
                         latest == null
-                            ? 'Sonuç ekleyin'
+                            ? 'Sonuç Ekleyin'
                             : _date(latest.testDate),
                         style: const TextStyle(
                           color: AppColors.muted,

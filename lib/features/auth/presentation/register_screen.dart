@@ -261,7 +261,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               label: Text(
                                 _isLoading
                                     ? 'Hesap oluşturuluyor...'
-                                    : 'Hesap oluştur',
+                                    : 'Hesap Oluştur',
                               ),
                             ),
                           ],

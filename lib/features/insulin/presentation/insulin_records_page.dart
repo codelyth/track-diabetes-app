@@ -45,7 +45,7 @@ class _InsulinRecordsPageState extends State<InsulinRecordsPage> {
         ? value.toStringAsFixed(0)
         : value.toString();
 
-    return '${text.replaceAll('.', ',')} ünite';
+    return '${text.replaceAll('.', ',')} Ünite';
   }
 
   void _showMessage(String message) {
@@ -101,7 +101,7 @@ class _InsulinRecordsPageState extends State<InsulinRecordsPage> {
                     foregroundColor: Theme.of(context).colorScheme.error,
                   ),
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('Kaydı sil'),
+                  label: const Text('Kaydı Sil'),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
@@ -234,7 +234,7 @@ class _InsulinRecordsPageState extends State<InsulinRecordsPage> {
                               _entriesStream = _repository.watchEntries();
                             });
                           },
-                          child: const Text('Yeniden dene'),
+                          child: const Text('Yeniden Dene'),
                         ),
                       ],
                     ),

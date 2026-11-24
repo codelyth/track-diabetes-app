@@ -208,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: _submit,
                             icon: const Icon(Icons.login),
                             label: Text(
-                              _isLoading ? 'Giriş yapılıyor...' : 'Giriş yap',
+                              _isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap',
                             ),
                           ),
                         ],

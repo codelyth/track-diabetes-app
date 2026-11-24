@@ -73,7 +73,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
       initialDate: _measuredAt,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      helpText: 'Ölçüm tarihini seçin',
+      helpText: 'Ölçüm Tarihini Seçin',
       cancelText: 'İptal',
       confirmText: 'Seç',
     );
@@ -95,7 +95,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
     final selected = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_measuredAt),
-      helpText: 'Ölçüm saatini seçin',
+      helpText: 'Ölçüm Saatini Seçin',
       cancelText: 'İptal',
       confirmText: 'Seç',
       builder: (context, child) {
@@ -205,7 +205,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: AppColors.background,
-          title: Text(_isEditing ? 'Ölçümü düzenle' : 'Ölçüm ekle'),
+          title: Text(_isEditing ? 'Ölçümü Düzenle' : 'Ölçüm Ekle'),
           automaticallyImplyLeading: !_isSaving,
         ),
         body: SafeArea(
@@ -230,7 +230,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _label('Kan şekeri değeri'),
+                              _label('Kan Şekeri Değeri'),
                               const SizedBox(height: 16),
                               TextFormField(
                                 controller: _valueController,
@@ -245,7 +245,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                                   color: AppColors.text,
                                 ),
                                 decoration: const InputDecoration(
-                                  hintText: 'Değer girin',
+                                  hintText: 'Değer Girin',
                                   suffixText: 'mg/dL',
                                 ),
                                 validator: (value) {
@@ -264,7 +264,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        _label('Ölçüm türü'),
+                        _label('Ölçüm Türü'),
                         const SizedBox(height: 12),
                         SegmentedButton<GlucoseType>(
                           emptySelectionAllowed: true,
@@ -290,7 +290,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                           },
                         ),
                         const SizedBox(height: 24),
-                        _label('Ölçüm zamanı'),
+                        _label('Ölçüm Zamanı'),
                         const SizedBox(height: 12),
                         OutlinedButton.icon(
                           onPressed: _pickDate,
@@ -319,9 +319,9 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                           maxLines: 5,
                           maxLength: 1000,
                           decoration: const InputDecoration(
-                            labelText: 'Not (isteğe bağlı)',
+                            labelText: 'Not (İsteğe Bağlı)',
                             alignLabelWithHint: true,
-                            hintText: 'Ölçümle ilgili bir not ekleyin',
+                            hintText: 'Ölçümle ilgili bir not ekleyin.',
                           ),
                           validator: (value) {
                             if ((value?.trim().length ?? 0) > 1000) {
@@ -339,7 +339,7 @@ class _AddGlucoseScreenState extends State<AddGlucoseScreen> {
                             _isSaving
                                 ? 'Kaydediliyor...'
                                 : _isEditing
-                                ? 'Değişiklikleri kaydet'
+                                ? 'Değişiklikleri Kaydet'
                                 : 'Kaydet',
                           ),
                         ),

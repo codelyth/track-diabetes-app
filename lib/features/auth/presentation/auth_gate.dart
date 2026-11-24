@@ -149,7 +149,7 @@ class _AccountAccessGateState extends State<_AccountAccessGate> {
                 FilledButton.icon(
                   onPressed: _retry,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Tekrar dene'),
+                  label: const Text('Tekrar Dene'),
                 ),
               ],
             ),

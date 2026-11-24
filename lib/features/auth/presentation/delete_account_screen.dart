@@ -162,7 +162,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             appBar: AppBar(
               automaticallyImplyLeading: !busy && !widget.resuming,
               title: Text(
-                widget.resuming ? 'Hesap silmeyi tamamla' : 'Hesabımı sil',
+                widget.resuming ? 'Hesap Silmeyi Tamamla' : 'Hesabımı Sil',
               ),
             ),
             body: SafeArea(
@@ -184,7 +184,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                           const SizedBox(height: 20),
                           Text(
                             widget.resuming
-                                ? 'Hesap silme işleminiz bekliyor'
+                                ? 'Hesap silme işleminiz bekliyor.'
                                 : 'Bu işlem geri alınamaz',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleLarge
@@ -224,7 +224,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                             enableSuggestions: false,
                             textInputAction: TextInputAction.done,
                             decoration: InputDecoration(
-                              labelText: 'Mevcut şifreniz',
+                              labelText: 'Mevcut Şifreniz',
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 onPressed: busy
@@ -235,8 +235,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                                         });
                                       },
                                 tooltip: _showPassword
-                                    ? 'Şifreyi gizle'
-                                    : 'Şifreyi göster',
+                                    ? 'Şifreyi Gizle'
+                                    : 'Şifreyi Göster',
                                 icon: Icon(
                                   _showPassword
                                       ? Icons.visibility_off_outlined
@@ -310,14 +310,14 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                             icon: const Icon(Icons.delete_forever),
                             label: Text(
                               widget.resuming
-                                  ? 'Silmeyi tamamla'
-                                  : 'Hesabımı kalıcı olarak sil',
+                                  ? 'Silmeyi Tamamla'
+                                  : 'Hesabımı Kalıcı Olarak Sil',
                             ),
                           ),
                           if (widget.resuming)
                             TextButton(
                               onPressed: busy ? null : _signOut,
-                              child: const Text('Şimdilik çıkış yap'),
+                              child: const Text('Şimdilik Çıkış Yap'),
                             ),
                         ],
                       ),

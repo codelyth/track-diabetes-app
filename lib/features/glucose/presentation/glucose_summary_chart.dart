@@ -53,7 +53,7 @@ class GlucoseSummaryChart extends StatelessWidget {
       children: [
         Semantics(
           label:
-              '${sorted.length} kayıtlı ölçüm. '
+              '${sorted.length} Kayıtlı Ölçüm '
               'Ortalama ${average.toStringAsFixed(1)} mg/dL. '
               '$targetCount hedefte, '
               '$cautionCount turuncu grupta, '
@@ -86,12 +86,12 @@ class GlucoseSummaryChart extends StatelessWidget {
               icon: Icons.circle,
             ),
             _ChartLegend(
-              label: 'Hedef dışı',
+              label: 'Hedef Dışı',
               color: GlucoseLevel.high.color,
               icon: Icons.diamond,
             ),
             _ChartLegend(
-              label: 'Düşük / çok yüksek',
+              label: 'Düşük / Çok Yüksek',
               color: GlucoseLevel.veryHigh.color,
               icon: Icons.square,
             ),

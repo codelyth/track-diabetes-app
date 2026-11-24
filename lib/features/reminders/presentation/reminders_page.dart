@@ -280,7 +280,7 @@ class _RemindersPageState extends State<RemindersPage>
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'Takip hatırlatıcıları',
+          'Takip Hatırlatıcıları',
           style: Theme.of(context).textTheme.titleLarge
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
@@ -294,7 +294,7 @@ class _RemindersPageState extends State<RemindersPage>
           Text(_scheduleStatus),
           TextButton(
             onPressed: _isWorking ? null : _refresh,
-            child: const Text('Yeniden dene'),
+            child: const Text('Yeniden Dene'),
           ),
           const SizedBox(height: 16),
         ],
@@ -309,8 +309,8 @@ class _RemindersPageState extends State<RemindersPage>
                 children: [
                   Text(
                     _notificationsEnabled == false
-                        ? 'Bildirimler kapalı'
-                        : 'Hatırlatıcılar gecikebilir',
+                        ? 'Bildirimler Kapalı'
+                        : 'Hatırlatıcılar gecikebilir.',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
@@ -321,7 +321,7 @@ class _RemindersPageState extends State<RemindersPage>
                   ),
                   TextButton(
                     onPressed: _isWorking ? null : _openNotificationSettings,
-                    child: const Text('Bildirim ayarları'),
+                    child: const Text('Bildirim Ayarları'),
                   ),
                 ],
               ),
@@ -347,7 +347,7 @@ class _RemindersPageState extends State<RemindersPage>
                   );
                 },
           icon: const Icon(Icons.checklist_outlined),
-          label: const Text('Bugünkü insülin takibi'),
+          label: const Text('Bugünkü Insülin Takibi'),
         ),
         const SizedBox(height: 20),
         if (_isWorking) ...[
@@ -384,7 +384,7 @@ class _RemindersPageState extends State<RemindersPage>
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'Henüz hatırlatıcı yok',
+                  'Henüz Hatırlatıcı Yok',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 8),

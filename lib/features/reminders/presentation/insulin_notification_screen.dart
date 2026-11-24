@@ -315,7 +315,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
         ),
         lastDate: DateTime(now.year, now.month, now.day),
         selectableDayPredicate: _selectableDate,
-        helpText: 'Bildirimin ait olduğu plan gününü seçin',
+        helpText: 'Bildirimin ait olduğu plan gününü seçin.',
         cancelText: 'Vazgeç',
         confirmText: 'Bu günü seç',
       );
@@ -480,7 +480,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
             canPop: false,
             child: AlertDialog(
               icon: const Icon(Icons.snooze_outlined),
-              title: const Text('Hatırlatıcı ertelendi'),
+              title: const Text('Hatırlatıcı ertelendi.'),
               content: Text(
                 '$date günü saat $time için bildirim '
                 'cihazda kayıtlı.\n\n'
@@ -527,7 +527,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: !_busy,
-          title: const Text('İnsülin hatırlatıcısı'),
+          title: const Text('İnsülin Hatırlatıcısı'),
         ),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -548,7 +548,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        _fixedDate ? 'İnsülin planı' : 'İnsülin takibi',
+                        _fixedDate ? 'İnsülin Planı' : 'İnsülin Takibi',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 12),
@@ -575,7 +575,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
                         icon: const Icon(Icons.calendar_today_outlined),
                         label: Text(
                           target == null
-                              ? 'Kayıt için plan tarihini seç'
+                              ? 'Kayıt İçin Plan Tarihini Seç'
                               : '${target.dateLabel} · ${target.timeLabel}',
                         ),
                       ),
@@ -602,7 +602,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
                                 ? null
                                 : () => _perform('complete'),
                             icon: const Icon(Icons.check),
-                            label: const Text('Yapılan uygulamayı kaydet'),
+                            label: const Text('Yapılan Uygulamayı Kaydet'),
                           ),
                         if (_action == 'skip' || _action == 'open') ...[
                           const SizedBox(height: 8),
@@ -611,7 +611,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
                                 ? null
                                 : () => _perform('skip'),
                             child: const Text(
-                              'Seçilen planı Atlandı olarak onayla',
+                              'Seçilen planı Atlandı olarak onayla.',
                             ),
                           ),
                         ],
@@ -622,8 +622,8 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
                             icon: const Icon(Icons.snooze),
                             label: Text(
                               target == null
-                                  ? 'Bildirimi 10 dakika ertele'
-                                  : 'Bu planı 10 dakika ertele',
+                                  ? 'Bildirimi 10 Dakika Ertele'
+                                  : 'Bu planı 10 Dakika Ertele',
                             ),
                           ),
                         ],
@@ -646,7 +646,7 @@ class _InsulinNotificationScreenState extends State<InsulinNotificationScreen> {
                       const SizedBox(height: 12),
                       OutlinedButton(
                         onPressed: _busy ? null : _load,
-                        child: const Text('Tekrar dene'),
+                        child: const Text('Tekrar Dene'),
                       ),
                     ],
                     const SizedBox(height: 20),

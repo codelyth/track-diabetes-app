@@ -188,7 +188,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Takibinizi planlayın',
+                        'Takibinizi Planlayın',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleLarge
                             ?.copyWith(fontWeight: FontWeight.w700),
@@ -209,7 +209,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const _FieldLabel('Hatırlatma türü'),
+                            const _FieldLabel('Hatırlatma Türü'),
                             const SizedBox(height: 8),
                             DropdownButtonFormField<ReminderType>(
                               initialValue: _type,
@@ -270,14 +270,14 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                             ),
                             const SizedBox(height: 8),
                             const Text(
-                              '24 saat biçimi · Cihazın yerel saatine göre.',
+                              '24 Saat Biçimi · Cihazın yerel saatine göre.',
                               style: TextStyle(
                                 fontSize: AppTypography.captionSize,
                                 color: AppColors.muted,
                               ),
                             ),
                             const SizedBox(height: 24),
-                            const _FieldLabel('Tekrar günleri'),
+                            const _FieldLabel('Tekrar Günleri'),
                             const SizedBox(height: 8),
                             Wrap(
                               spacing: 8,
@@ -288,19 +288,19 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                                       ? null
                                       : () =>
                                             _selectDays({1, 2, 3, 4, 5, 6, 7}),
-                                  child: const Text('Her gün'),
+                                  child: const Text('Her Gün'),
                                 ),
                                 TextButton(
                                   onPressed: _isSaving
                                       ? null
                                       : () => _selectDays({1, 2, 3, 4, 5}),
-                                  child: const Text('Hafta içi'),
+                                  child: const Text('Hafta İçi'),
                                 ),
                                 TextButton(
                                   onPressed: _isSaving
                                       ? null
                                       : () => _selectDays({6, 7}),
-                                  child: const Text('Hafta sonu'),
+                                  child: const Text('Hafta Sonu'),
                                 ),
                               ],
                             ),
@@ -328,7 +328,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                               }).toList(),
                             ),
                             const SizedBox(height: 24),
-                            const _FieldLabel('Açıklama (isteğe bağlı)'),
+                            const _FieldLabel('Açıklama (İsteğe Bağlı)'),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _noteController,

@@ -211,8 +211,8 @@ class _NextReminderCardState extends State<NextReminderCard>
         return StreamBuilder<List<Reminder>>(
           stream: _stream,
           builder: (context, snapshot) {
-            String title = 'Yükleniyor';
-            String subtitle = 'Hatırlatıcılar kontrol ediliyor';
+            String title = 'Yükleniyor...';
+            String subtitle = 'Hatırlatıcılar kontrol ediliyor...';
 
             String? date;
             String? footer;
@@ -221,10 +221,10 @@ class _NextReminderCardState extends State<NextReminderCard>
 
             if (snapshot.hasError) {
               title = 'Alınamadı';
-              subtitle = 'Hatırlatıcıları kontrol edin';
+              subtitle = 'Hatırlatıcıları kontrol edin.';
             } else if (clockError) {
               title = 'Saat alınamadı';
-              subtitle = 'Cihazın saat dilimini kontrol edin';
+              subtitle = 'Cihazın saat dilimini kontrol edin.';
             } else if (snapshot.hasData &&
                 location != null &&
                 !_loadingSnoozes) {
@@ -288,20 +288,20 @@ class _NextReminderCardState extends State<NextReminderCard>
               }
 
               if (nextReminder == null || nextDate == null) {
-                title = 'Plan yok';
-                subtitle = 'Aktif hatırlatıcı ekleyin';
+                title = 'Plan Yok';
+                subtitle = 'Aktif hatırlatıcı ekleyin.';
               } else {
                 title = ReminderTime.time(nextDate);
                 subtitle = nextReminder.type.label;
                 date = ReminderTime.date(nextDate);
 
                 footer = isSnoozed
-                    ? 'Erteleme zamanı · 24 saat'
-                    : 'Planlanan · 24 saat';
+                    ? 'Erteleme Zamanı · 24 Saat'
+                    : 'Planlanan · 24 Saat';
               }
 
               if (_snoozeError) {
-                footer = 'Ertelemeler kontrol edilemedi';
+                footer = 'Ertelemeler kontrol edilemedi.';
               }
             }
 

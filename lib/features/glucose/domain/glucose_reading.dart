@@ -12,7 +12,7 @@ enum GlucoseType {
   static GlucoseType fromCode(String code) {
     return GlucoseType.values.firstWhere(
       (type) => type.code == code,
-      orElse: () => throw FormatException('Bilinmeyen ölçüm türü: $code'),
+      orElse: () => throw FormatException('Bilinmeyen Ölçüm Türü: $code'),
     );
   }
 }
@@ -20,12 +20,12 @@ enum GlucoseType {
 enum GlucoseSeverity { target, caution, alert }
 
 enum GlucoseLevel {
-  veryLow('veryLow', 'Çok düşük'),
+  veryLow('veryLow', 'Çok Düşük'),
   low('low', 'Düşük'),
-  belowTarget('belowTarget', 'Hedefin altında'),
-  inTarget('inTarget', 'Hedef aralıkta'),
+  belowTarget('belowTarget', 'Hedefin Altında'),
+  inTarget('inTarget', 'Hedef Aralıkta'),
   high('high', 'Yüksek'),
-  veryHigh('veryHigh', 'Çok yüksek');
+  veryHigh('veryHigh', 'Çok Yüksek');
 
   const GlucoseLevel(this.code, this.label);
 

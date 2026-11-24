@@ -94,7 +94,7 @@ class _Hba1cRecordsPageState extends State<Hba1cRecordsPage> {
                     foregroundColor: Theme.of(context).colorScheme.error,
                   ),
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('Sonucu sil'),
+                  label: const Text('Sonucu Sil'),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
@@ -226,7 +226,7 @@ class _Hba1cRecordsPageState extends State<Hba1cRecordsPage> {
                               _resultsStream = _repository.watchResults();
                             });
                           },
-                          child: const Text('Yeniden dene'),
+                          child: const Text('Yeniden Dene'),
                         ),
                       ],
                     ),

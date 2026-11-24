@@ -43,7 +43,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
         ? value.toStringAsFixed(0)
         : value.toString();
 
-    return '${text.replaceAll('.', ',')} ünite';
+    return '${text.replaceAll('.', ',')} Ünite';
   }
 
   @override
@@ -84,7 +84,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'Bugünkü insülin',
+                          'Bugünkü İnsülin',
                           style: TextStyle(
                             fontSize: AppTypography.cardTitleSize,
                             fontWeight: FontWeight.w600,
@@ -94,7 +94,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                       ),
                       if (snapshot.hasData && !snapshot.hasError)
                         Text(
-                          '${entries.length} kayıt',
+                          '${entries.length} Kayıt',
                           style: const TextStyle(
                             color: AppColors.muted,
                             fontSize: AppTypography.captionSize,
@@ -120,7 +120,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                               _entriesStream = _repository.watchEntries();
                             });
                           },
-                          child: const Text('Yeniden dene'),
+                          child: const Text('Yeniden Dene'),
                         ),
                       ],
                     )
@@ -188,7 +188,7 @@ class _TodayInsulinCardState extends State<TodayInsulinCard> {
                     if (entries.length > 3) ...[
                       const SizedBox(height: 6),
                       Text(
-                        '+${entries.length - 3} kayıt daha',
+                        '+${entries.length - 3} Kayıt Daha',
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontSize: AppTypography.captionSize,

@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum ReminderType {
-  fasting('fasting', 'Açlık ölçümü'),
-  postMeal('postMeal', 'Tokluk ölçümü'),
+  fasting('fasting', 'Açlık Ölçümü'),
+  postMeal('postMeal', 'Tokluk Ölçümü'),
   insulin('insulin', 'İnsülin');
 
   const ReminderType(this.code, this.label);
@@ -52,15 +52,15 @@ class Reminder {
     final sortedDays = daySet.toList()..sort();
 
     if (daySet.length == 7) {
-      return 'Her gün';
+      return 'Her Gün';
     }
 
     if (daySet.length == 5 && daySet.containsAll([1, 2, 3, 4, 5])) {
-      return 'Hafta içi';
+      return 'Hafta İçi';
     }
 
     if (daySet.length == 2 && daySet.containsAll([6, 7])) {
-      return 'Hafta sonu';
+      return 'Hafta Sonu';
     }
 
     const names = {

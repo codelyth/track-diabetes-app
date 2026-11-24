@@ -259,7 +259,7 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.background,
           title: Text(
-            _isEditing ? 'İnsülin kaydını düzenle' : 'İnsülin uygulaması ekle',
+            _isEditing ? 'İnsülin Kaydını Düzenle' : 'İnsülin Uygulaması Ekle',
           ),
           automaticallyImplyLeading: !_isSaving,
         ),
@@ -300,12 +300,12 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                'İnsülin seçin',
+                                'İnsülin Seçin',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 16),
                               const Text(
-                                'Hızlı etkili (Bolus)',
+                                'Hızlı Etkili (Bolus)',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.muted,
@@ -327,7 +327,7 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
                               ),
                               const SizedBox(height: 20),
                               const Text(
-                                'Uzun etkili (Bazal)',
+                                'Uzun Etkili (Bazal)',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.muted,
@@ -362,8 +362,8 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
                                   setState(() {});
                                 },
                                 decoration: const InputDecoration(
-                                  labelText: 'İnsülin adı',
-                                  hintText: 'Kullandığınız insülinin adı',
+                                  labelText: 'İnsülin Adı',
+                                  hintText: 'Kullandığınız İnsülinin Adı',
                                   prefixIcon: Icon(Icons.medication_outlined),
                                 ),
                                 validator: (value) {
@@ -386,7 +386,7 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
                                 initialValue: _kind,
                                 isExpanded: true,
                                 decoration: const InputDecoration(
-                                  labelText: 'İnsülin türü',
+                                  labelText: 'İnsülin Türü',
                                 ),
                                 items: InsulinKind.values.map((kind) {
                                   return DropdownMenuItem<InsulinKind>(
@@ -414,8 +414,8 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
                           ),
                           textInputAction: TextInputAction.next,
                           decoration: const InputDecoration(
-                            labelText: 'Uygulanan miktar',
-                            suffixText: 'ünite',
+                            labelText: 'Uygulanan Miktar',
+                            suffixText: 'Ünite',
                           ),
                           validator: (text) {
                             final value = _parseDose(text ?? '');
@@ -431,7 +431,7 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Gerçek uygulama zamanı',
+                          'Gerçek Uygulama Zamanı',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),
@@ -464,7 +464,7 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
                           maxLines: 5,
                           maxLength: 1000,
                           decoration: const InputDecoration(
-                            labelText: 'Not (isteğe bağlı)',
+                            labelText: 'Not (isteğe Bağlı)',
                             alignLabelWithHint: true,
                           ),
                           validator: (text) {
@@ -483,8 +483,8 @@ class _AddInsulinScreenState extends State<AddInsulinScreen> {
                             _isSaving
                                 ? 'Kaydediliyor...'
                                 : _isEditing
-                                ? 'Değişiklikleri kaydet'
-                                : 'Yapılan uygulamayı kaydet',
+                                ? 'Değişiklikleri Kaydet'
+                                : 'Yapılan Uygulamayı Kaydet',
                           ),
                         ),
                         if (_isSaving) ...[

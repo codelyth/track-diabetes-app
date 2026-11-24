@@ -241,7 +241,7 @@ class _InsulinTrackingPageState extends State<InsulinTrackingPage>
         : skipped
         ? 'Atlandı'
         : future
-        ? 'Saati bekleniyor'
+        ? 'Saati Bekleniyor'
         : 'İşaretlenmedi';
 
     final icon = completed
@@ -300,7 +300,7 @@ class _InsulinTrackingPageState extends State<InsulinTrackingPage>
               onPressed: _busy
                   ? null
                   : () => _run(() => _repository.undoSkip(occurrence)),
-              child: const Text('Atlandı işaretini geri al'),
+              child: const Text('Atlandı İşaretini Geri Al'),
             ),
           ] else if (!future) ...[
             const SizedBox(height: 14),
@@ -343,7 +343,7 @@ class _InsulinTrackingPageState extends State<InsulinTrackingPage>
                 setState(_createStreams);
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('Tekrar dene'),
+              label: const Text('Tekrar Dene'),
             ),
           ],
         ),
@@ -361,7 +361,7 @@ class _InsulinTrackingPageState extends State<InsulinTrackingPage>
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: !_busy,
-          title: const Text('Bugünkü insülin takibi'),
+          title: const Text('Bugünkü İnsülin Takibi'),
         ),
         body: SafeArea(
           child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(

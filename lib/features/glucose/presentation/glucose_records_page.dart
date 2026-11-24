@@ -84,7 +84,7 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       initialDateRange: _customRange ?? _range,
-      helpText: 'Tarih aralığını seçin',
+      helpText: 'Tarih Aralığını Seçin',
       cancelText: 'İptal',
       confirmText: 'Seç',
       saveText: 'Uygula',
@@ -154,11 +154,11 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _CountChip(level: GlucoseLevel.inTarget, text: '$targetCount hedefte'),
-        _CountChip(level: GlucoseLevel.high, text: '$cautionCount hedef dışı'),
+        _CountChip(level: GlucoseLevel.inTarget, text: '$targetCount Hedefte'),
+        _CountChip(level: GlucoseLevel.high, text: '$cautionCount Hedef Dışı'),
         _CountChip(
           level: GlucoseLevel.veryHigh,
-          text: '$alertCount düşük / çok yüksek',
+          text: '$alertCount Düşük / Çok Yüksek',
         ),
       ],
     );
@@ -227,7 +227,7 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                       });
                     },
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Yeniden dene'),
+                    label: const Text('Yeniden Dene'),
                   ),
                 ],
               );
@@ -254,7 +254,7 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
                     Icon(Icons.search_off, size: 40, color: AppColors.primary),
                     SizedBox(height: 12),
                     Text(
-                      'Bu aralıkta kayıt yok',
+                      'Bu aralıkta kayıt yok.',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     SizedBox(height: 8),
@@ -272,8 +272,8 @@ class _GlucoseRecordsPageState extends State<GlucoseRecordsPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  '${readings.length} ölçüm • '
-                  '${_type?.label ?? 'Tüm türler'}',
+                  '${readings.length} Ölçüm • '
+                  '${_type?.label ?? 'Tüm Türler'}',
                   style: const TextStyle(color: AppColors.muted),
                 ),
                 const SizedBox(height: 12),

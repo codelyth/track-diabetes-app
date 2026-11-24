@@ -203,7 +203,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 onPressed: () {
                                   setState(() => _requestCompleted = false);
                                 },
-                                child: const Text('Başka bir adres kullan'),
+                                child: const Text('Başka Bir Adres Kullan'),
                               ),
                             ],
                           ],

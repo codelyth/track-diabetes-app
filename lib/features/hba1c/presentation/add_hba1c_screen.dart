@@ -69,7 +69,7 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
       initialDate: _testDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      helpText: 'Tahlil tarihini seçin',
+      helpText: 'Tahlil Tarihini Seçin',
       cancelText: 'İptal',
       confirmText: 'Seç',
     );
@@ -152,7 +152,7 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.background,
           title: Text(
-            _isEditing ? 'HbA1c sonucunu düzenle' : 'HbA1c sonucu ekle',
+            _isEditing ? 'HbA1c Sonucunu Düzenle' : 'HbA1c Sonucu Ekle',
           ),
           automaticallyImplyLeading: !_isSaving,
         ),
@@ -184,7 +184,7 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'HbA1c sonucu',
+                          'HbA1c Sonucu',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),
@@ -219,7 +219,7 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Tahlil tarihi',
+                          'Tahlil Tarihi',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),
@@ -235,9 +235,9 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
                           maxLines: 5,
                           maxLength: 1000,
                           decoration: const InputDecoration(
-                            labelText: 'Not (isteğe bağlı)',
+                            labelText: 'Not (İsteğe Bağlı)',
                             alignLabelWithHint: true,
-                            hintText: 'Sonuçla ilgili bir not ekleyin',
+                            hintText: 'Sonuçla ilgili bir not ekleyin.',
                           ),
                           validator: (text) {
                             if ((text?.trim().length ?? 0) > 1000) {
@@ -255,8 +255,8 @@ class _AddHba1cScreenState extends State<AddHba1cScreen> {
                             _isSaving
                                 ? 'Kaydediliyor...'
                                 : _isEditing
-                                ? 'Değişiklikleri kaydet'
-                                : 'Sonucu kaydet',
+                                ? 'Değişiklikleri Kaydet'
+                                : 'Sonucu Kaydet',
                           ),
                         ),
                         if (_isSaving) ...[
